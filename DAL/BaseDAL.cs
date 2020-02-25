@@ -1,6 +1,7 @@
 using System;
 using System.Data;
-using Npgsql;
+using System.IO;
+using Microsoft.Data.SqlClient;
 
 namespace ChatServer.DAL
 {
@@ -10,7 +11,7 @@ namespace ChatServer.DAL
         {
             get
             {
-                return Environment.GetEnvironmentVariable("CHAT_DB_HOST") ?? "localhost";
+                return Environment.GetEnvironmentVariable("CHAT_DB_HOST");
             }
         }
 
@@ -18,7 +19,7 @@ namespace ChatServer.DAL
         {
             get
             {
-                return Environment.GetEnvironmentVariable("CHAT_DB_USER") ?? "postgres";
+                return Environment.GetEnvironmentVariable("CHAT_DB_USER");
             }
         }
 
@@ -26,7 +27,7 @@ namespace ChatServer.DAL
         {
             get
             {
-                return Environment.GetEnvironmentVariable("CHAT_DB_PASS") ?? "postgres";
+                return Environment.GetEnvironmentVariable("CHAT_DB_PASS");
             }
         }
 
@@ -34,15 +35,7 @@ namespace ChatServer.DAL
         {
             get
             {
-                return Environment.GetEnvironmentVariable("CHAT_DB_NAME") ?? "chat";
-            }
-        }
-
-        private static string Port
-        {
-            get
-            {
-                return Environment.GetEnvironmentVariable("CHAT_DB_PORT") ?? "5432";
+                return Environment.GetEnvironmentVariable("CHAT_DB_NAME");
             }
         }
 
@@ -50,23 +43,40 @@ namespace ChatServer.DAL
         {
             get
             {
-                return $"Server={Host};Port={Port};Database={Database};User Id={User};Password={Password};";
+                if(string.IsNullOrEmpty(Host))
+                {
+                    var path = Environment.CurrentDirectory;
+                    return $"Data Source=(LocalDb)\\ChatServer;Integrated Security=True;";
+                } else return $"Server={Host};Database={Database};User Id={User};Password={Password};";
             }
         }
 
         protected static IDbConnection GetConnection()
         {
-            return new NpgsqlConnection(ConnectionString);
+            var conn = new SqlConnection(ConnectionString);
+            conn.Open();
+            return conn;
         }
 
         protected static IDbCommand GetCommand(string query = "", IDbConnection connection = null)
         {
-            return new NpgsqlCommand(query, (connection ?? GetConnection()) as NpgsqlConnection);
+            return new SqlCommand(query, (connection ?? GetConnection()) as SqlConnection);
         }
 
         protected static IDbDataParameter GetParameter(string name, object value)
         {
-            return new NpgsqlParameter(name, value);
+            return new SqlParameter(name, value);
+        }
+
+        protected static void EnsureSchema()
+        {
+            var query = @"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'chat')
+                            BEGIN
+                                EXEC('CREATE SCHEMA chat')
+                            END";
+
+            using var cmd = GetCommand(query);
+            cmd.ExecuteNonQuery();
         }
     }
 }

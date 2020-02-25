@@ -15,7 +15,7 @@ namespace ChatServer.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private ILogger<UserController> _logger;
+        private readonly ILogger<UserController> _logger;
 
         public UserController(ILogger<UserController> logger)
         {
@@ -29,17 +29,22 @@ namespace ChatServer.Controllers
         [HttpGet("find/{username}")]
         public IActionResult Find(string username)
         {
-            try {
+            try
+            {
                 var user = UserDAL.Find(username);
-                if(user != null)
+                if (user != null)
                 {
                     return Ok(user);
-                } else return NotFound();
-            } catch (Exception e) {
-                if(e is DataException)
+                }
+                else return NotFound();
+            }
+            catch (Exception e)
+            {
+                if (e is ChatDataException)
                 {
                     return BadRequest(e.Message);
-                } else return StatusCode(500, e.Message);
+                }
+                else return StatusCode(500, e.Message);
             }
         }
 
@@ -50,17 +55,38 @@ namespace ChatServer.Controllers
         [HttpGet("get/{id}")]
         public IActionResult Get(string id)
         {
-            try {
+            try
+            {
                 var user = UserDAL.Get(id);
-                if(user != null)
+                if (user != null)
                 {
                     return Ok(user);
-                } else return NotFound();
-            } catch (Exception e) {
-                if(e is DataException)
+                }
+                else return NotFound();
+            }
+            catch (Exception e)
+            {
+                if (e is ChatDataException)
                 {
                     return BadRequest(e.Message);
-                } else return StatusCode(500, e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpPost("register")]
+        public IActionResult Register([FromBody] UserModel user)
+        {
+            try
+            {
+                return Ok(UserDAL.Register(user));
+            } catch (Exception e)
+            {
+                if (e is ChatDataException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
             }
         }
     }
