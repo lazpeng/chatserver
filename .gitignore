@@ -9,3 +9,4 @@ obj/
 *.so
 *.dylib
 *.pdb
+*.user
