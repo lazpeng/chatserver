@@ -8,6 +8,8 @@ using ChatServer.Models;
 using ChatServer.Exceptions;
 using System.Collections.Generic;
 using System.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ChatServer.DAL
 {
@@ -32,6 +34,8 @@ namespace ChatServer.DAL
                             ProfilePicUrl TEXT,
                             FindInSearch BIT NOT NULL DEFAULT 1,
                             OpenChat BIT NOT NULL DEFAULT 1,
+                            PasswordHash CHAR(44) NOT NULL,
+                            PasswordSalt CHAR(44) NOT NULL,
                             CONSTRAINT USER_UNIQUE UNIQUE (UserName),
                             CONSTRAINT EMAIL_UNIQUE UNIQUE (Email)
                         )";
@@ -90,18 +94,44 @@ namespace ChatServer.DAL
             return result.Count() == 0 ? null : result.First();
         }
 
+        private static string GenerateSalt()
+        {
+            var rng = new RNGCryptoServiceProvider();
+            var buffer = new byte[32];
+            rng.GetBytes(buffer);
+
+            return Convert.ToBase64String(buffer);
+        }
+
+        public static string CalculateHash(string password, string salt)
+        {
+            using var algo = new SHA256Managed();
+
+            var finalBytes = Encoding.UTF8.GetBytes(password.Concat(salt).ToString());
+
+            return Convert.ToBase64String(algo.ComputeHash(finalBytes));
+        }
+
         public static UserModel Register(UserModel user)
         {
             using var conn = GetConnection();
 
             user.Id = Guid.NewGuid().ToString();
 
+            var salt = GenerateSalt();
+            var hash = CalculateHash(user.Password, salt);
+
             try
             {
+                // TODO: Find way to also pass hash and salt values in this insert
+
                 conn.Execute("INSERT INTO chat.USERS(Id, UserName, FullName, Email, Bio, AccountCreated," +
-                    " LastLogin, LastSeen, DateOfBirth, ProfilePicUrl, FindInSearch, OpenChat) VALUES (" +
+                    " LastLogin, LastSeen, DateOfBirth, ProfilePicUrl, FindInSearch, OpenChat, PasswordHash, PasswordSalt) VALUES (" +
                     " @Id, @Username, @FullName, @Email, @Bio, SYSDATETIME(), SYSDATETIME(), SYSDATETIME(), @DateOfBirth," +
-                    " @ProfilePicUrl, @FindInSearch, @OpenChat)", user);
+                    " @ProfilePicUrl, @FindInSearch, @OpenChat, '', '')", user);
+
+                conn.Execute("UPDATE chat.USERS SET PasswordHash=@Hash, PasswordSalt=@Salt WHERE Id=@Id", new { user.Id, Hash = hash, Salt = salt });
+
                 return Get(user.Id);
             } catch (SqlException ex)
             {
@@ -201,17 +231,69 @@ namespace ChatServer.DAL
 
         public static void BlockUser(string SourceId, string BlockedId)
         {
+            EnsureDatabase();
 
+            using var cmd = GetCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM chat.BLACKLIST WHERE UserId=@UserId AND Blocked=@BlockedId";
+            cmd.Parameters.Add(GetParameter("@UserId", SourceId));
+            cmd.Parameters.Add(GetParameter("@BlockedId", BlockedId));
+
+            if(Convert.ToInt32(cmd.ExecuteScalar()) == 0)
+            {
+                cmd.CommandText = "INSERT INTO chat.BLACKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, SYSDATETIME())";
+                cmd.ExecuteNonQuery();
+            }
         }
 
         public static void UnblockUser(string SourceId, string BlockedId)
         {
+            EnsureDatabase();
 
+            using var conn = GetConnection();
+
+            conn.Execute("DELETE FROM chat.BLACKLIST WHERE UserId=@SourceId AND Blocked=@BlockedId", new { SourceId, BlockedId });
         }
 
-        public static void BlockList(string UserId)
+        public static List<string> BlockList(string UserId)
         {
+            EnsureDatabase();
 
+            var query = "SELECT Blocked FROM chat.BLACKLIST WHERE UserId=@UserId";
+            using var cmd = GetCommand(query);
+            cmd.Parameters.Add(GetParameter("@UserId", UserId));
+
+            var result = new List<string>();
+            var reader = cmd.ExecuteReader();
+
+            while(reader.Read())
+            {
+                result.Add(reader.GetString(0));
+            }
+
+            return result;
+        }
+
+        public static bool AreUsersFriends(string IdA, string IdB)
+        {
+            EnsureDatabase();
+
+            var query = "SELECT COUNT(*) FROM chat.USERS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
+
+            using var cmd = GetCommand(query);
+            cmd.Parameters.Add(GetParameter("@A", IdA));
+            cmd.Parameters.Add(GetParameter("@B", IdB));
+
+            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
+        public static void RemoveFriend(string SourceId, string TargetId)
+        {
+            EnsureDatabase();
+
+            using var conn = GetConnection();
+
+            var query = "DELETE FROM chat.FRIENDS WHERE (A=@SourceId AND B=@TargetId) OR (A = @TargetId AND B=@SourceId)";
+            conn.Execute(query, new { SourceId, TargetId });
         }
     }
 }

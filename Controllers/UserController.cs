@@ -52,11 +52,16 @@ namespace ChatServer.Controllers
         /// Gets an user based on its id.
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
-        [HttpGet("get/{id}")]
-        public IActionResult Get(string id)
+        [HttpGet("{fromId}/get/{id}")]
+        public IActionResult Get(string fromId, string id, [FromBody] string token)
         {
             try
             {
+                if(!AuthDAL.IsTokenValid(token, fromId))
+                {
+                    return Unauthorized();
+                }
+
                 var user = UserDAL.Get(id);
                 if (user != null)
                 {
@@ -82,7 +87,165 @@ namespace ChatServer.Controllers
                 return Ok(UserDAL.Register(user));
             } catch (Exception e)
             {
-                if (e is ChatDataException)
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpPut("{SourceId}/friend/add/{TargetId}")]
+        public IActionResult AddFriend(string SourceId, string TargetId, [FromBody] string Token)
+        {
+            try
+            {
+                if(!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                UserDAL.SendFriendRequest(SourceId, TargetId);
+                return Ok();
+            } catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpPut("{SourceId}/friend/reject/{TargetId}")]
+        public IActionResult RejectFriendRequest(string SourceId, string TargetId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                UserDAL.AnswerFriendRequest(SourceId, TargetId, false);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpPut("{SourceId}/friend/remove/{TargetId}")]
+        public IActionResult RemoveFriend(string SourceId, string TargetId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                UserDAL.RemoveFriend(SourceId, TargetId);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpPut("{SourceId}/block/add/{TargetId}")]
+        public IActionResult BlockUser(string SourceId, string TargetId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                UserDAL.BlockUser(SourceId, TargetId);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpPut("{SourceId}/block/remove/{TargetId}")]
+        public IActionResult UnblockUser(string SourceId, string TargetId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                UserDAL.UnblockUser(SourceId, TargetId);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpGet("{SourceId}/friendlist")]
+        public IActionResult FriendList(string SourceId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                return Ok(UserDAL.FriendList(SourceId));
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpGet("{SourceId}/blocklist")]
+        public IActionResult BlockList(string SourceId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                return Ok(UserDAL.BlockList(SourceId));
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
                 {
                     return BadRequest(e.Message);
                 }
