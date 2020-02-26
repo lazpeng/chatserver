@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ChatServer.DAL;
+using ChatServer.DAL.SqlServer;
 using ChatServer.Exceptions;
 using ChatServer.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
@@ -26,16 +27,17 @@ namespace ChatServer.Controllers
         {
             try
             {
-                var targetUser = UserDAL.Get(request.TargetId);
+                var userDAL = new UserDAL();
+                var targetUser = userDAL.Get(request.TargetId);
 
-                var openChatNotValid = !targetUser.OpenChat && !UserDAL.AreUsersFriends(request.SourceId, request.TargetId);
+                var openChatNotValid = !targetUser.OpenChat && !userDAL.AreUsersFriends(request.SourceId, request.TargetId);
 
-                if(!AuthDAL.IsTokenValid(request.SourceId, request.Token) || openChatNotValid)
+                if(!new AuthDAL().IsTokenValid(request.SourceId, request.Token) || openChatNotValid)
                 {
                     return Unauthorized();
                 }
 
-                ChatDAL.SendMessage(request);
+                new ChatDAL().SendMessage(request);
                 return Ok();
             } catch (Exception e)
             {
@@ -52,12 +54,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if(!AuthDAL.IsTokenValid(request.SourceId, request.Token))
+                if(!new AuthDAL().IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
 
-                return Ok(ChatDAL.CheckNewMessages(request));
+                return Ok(new ChatDAL().CheckNewMessages(request));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)
@@ -73,12 +75,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(request.SourceId, request.Token))
+                if (!new AuthDAL().IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
 
-                ChatDAL.UpdateSeen(request);
+                new ChatDAL().UpdateSeen(request);
                 return Ok();
             }
             catch (Exception e)

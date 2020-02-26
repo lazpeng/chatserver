@@ -10,12 +10,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
+using ChatServer.DAL.Interfaces;
 
-namespace ChatServer.DAL
+namespace ChatServer.DAL.SqlServer
 {
-    public abstract class UserDAL : BaseDAL
+    public class UserDAL : BaseDAL, IUserDAL
     {
-        private static void EnsureDatabase()
+        public void EnsureDatabase()
         {
             EnsureSchema();
 
@@ -73,7 +74,7 @@ namespace ChatServer.DAL
             }
         }
 
-        public static UserModel Find(string username)
+        public UserModel Find(string username)
         {
             EnsureDatabase();
 
@@ -84,7 +85,7 @@ namespace ChatServer.DAL
             return result.Count() == 0 ? null : result.First();
         }
 
-        public static UserModel Get(string id)
+        public UserModel Get(string id)
         {
             EnsureDatabase();
 
@@ -94,7 +95,7 @@ namespace ChatServer.DAL
             return result.Count() == 0 ? null : result.First();
         }
 
-        private static string GenerateSalt()
+        private string GenerateSalt()
         {
             var rng = new RNGCryptoServiceProvider();
             var buffer = new byte[32];
@@ -103,7 +104,7 @@ namespace ChatServer.DAL
             return Convert.ToBase64String(buffer);
         }
 
-        public static string CalculateHash(string password, string salt)
+        public string CalculateHash(string password, string salt)
         {
             using var algo = new SHA256Managed();
 
@@ -112,7 +113,7 @@ namespace ChatServer.DAL
             return Convert.ToBase64String(algo.ComputeHash(finalBytes));
         }
 
-        public static UserModel Register(UserModel user)
+        public UserModel Register(UserModel user)
         {
             using var conn = GetConnection();
 
@@ -156,7 +157,7 @@ namespace ChatServer.DAL
             }
         }
 
-        public static void SendFriendRequest(string SourceId, string TargetId)
+        public void SendFriendRequest(string SourceId, string TargetId)
         {
             IDbCommand cmd;
 
@@ -213,13 +214,13 @@ namespace ChatServer.DAL
             }
         }
 
-        public static void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
+        public void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
         {
             var query = "UPDATE chat.FRIENDS SET SettleDate = SYSDATETIME() AND Accepted = @Accepted WHERE A = @Id AND B = @Target";
             GetConnection().Execute(query, new { Accepted = Accepted ? 1 : 0, A = SourceId, B = TargetId });
         }
 
-        public static List<UserModel> FriendList(string UserId)
+        public List<UserModel> FriendList(string UserId)
         {
             using var conn = GetConnection();
 
@@ -229,7 +230,7 @@ namespace ChatServer.DAL
             return conn.Query<UserModel>(query, new { Id = UserId }).ToList();
         }
 
-        public static void BlockUser(string SourceId, string BlockedId)
+        public void BlockUser(string SourceId, string BlockedId)
         {
             EnsureDatabase();
 
@@ -245,7 +246,7 @@ namespace ChatServer.DAL
             }
         }
 
-        public static void UnblockUser(string SourceId, string BlockedId)
+        public void UnblockUser(string SourceId, string BlockedId)
         {
             EnsureDatabase();
 
@@ -254,7 +255,7 @@ namespace ChatServer.DAL
             conn.Execute("DELETE FROM chat.BLACKLIST WHERE UserId=@SourceId AND Blocked=@BlockedId", new { SourceId, BlockedId });
         }
 
-        public static List<string> BlockList(string UserId)
+        public List<string> BlockList(string UserId)
         {
             EnsureDatabase();
 
@@ -273,7 +274,7 @@ namespace ChatServer.DAL
             return result;
         }
 
-        public static bool AreUsersFriends(string IdA, string IdB)
+        public bool AreUsersFriends(string IdA, string IdB)
         {
             EnsureDatabase();
 
@@ -286,7 +287,7 @@ namespace ChatServer.DAL
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
         }
 
-        public static void RemoveFriend(string SourceId, string TargetId)
+        public void RemoveFriend(string SourceId, string TargetId)
         {
             EnsureDatabase();
 

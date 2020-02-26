@@ -5,14 +5,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Data;
+using ChatServer.DAL.Interfaces;
 
-namespace ChatServer.DAL
+namespace ChatServer.DAL.SqlServer
 {
-    public abstract class AuthDAL : BaseDAL
+    public class AuthDAL : BaseDAL, IAuthDAL
     {
-        public static TimeSpan TokenExpiration = TimeSpan.FromHours(12);
+        public TimeSpan TokenExpiration = TimeSpan.FromHours(12);
 
-        private static void EnsureDatabase()
+        public void EnsureDatabase()
         {
             EnsureSchema();
 
@@ -37,7 +38,7 @@ namespace ChatServer.DAL
         /// <param name="UserId">Id for the user that made the request</param>
         /// <param name="Token">Token given by the user</param>
         /// <returns>Boolean result to wether or not the user auth is valid</returns>
-        public static bool IsTokenValid(string UserId, string Token)
+        public bool IsTokenValid(string UserId, string Token)
         {
             EnsureDatabase();
 
@@ -49,7 +50,7 @@ namespace ChatServer.DAL
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
         }
 
-        private static string GenerateNewToken(string UserId)
+        private string GenerateNewToken(string UserId)
         {
             EnsureDatabase();
 
@@ -64,7 +65,7 @@ namespace ChatServer.DAL
             return token;
         }
 
-        public static LoginResponse Login(string Username, string Password)
+        public LoginResponse Login(string Username, string Password)
         {
             EnsureDatabase();
 
@@ -80,7 +81,7 @@ namespace ChatServer.DAL
                 var salt = reader.GetString(reader.GetOrdinal("PasswordSalt"));
                 var userId = reader.GetString(reader.GetOrdinal("Id"));
 
-                if (hash == UserDAL.CalculateHash(Password, salt))
+                if (hash == new UserDAL().CalculateHash(Password, salt))
                 {
                     return new LoginResponse { Success = true, ErrorMessage = "", Token = GenerateNewToken(userId) };
                 }

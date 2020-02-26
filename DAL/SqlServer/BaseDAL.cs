@@ -1,11 +1,12 @@
 using System;
 using System.Data;
 using System.IO;
+using ChatServer.DAL.Interfaces;
 using Microsoft.Data.SqlClient;
 
-namespace ChatServer.DAL
+namespace ChatServer.DAL.SqlServer
 {
-    public abstract class BaseDAL
+    public abstract class BaseDAL : IBaseDAL
     {
         private static string Host
         {
@@ -45,30 +46,29 @@ namespace ChatServer.DAL
             {
                 if(string.IsNullOrEmpty(Host))
                 {
-                    var path = Environment.CurrentDirectory;
                     return $"Data Source=(LocalDb)\\ChatServer;Integrated Security=True;";
                 } else return $"Server={Host};Database={Database};User Id={User};Password={Password};";
             }
         }
 
-        protected static IDbConnection GetConnection()
+        public IDbConnection GetConnection()
         {
             var conn = new SqlConnection(ConnectionString);
             conn.Open();
             return conn;
         }
 
-        protected static IDbCommand GetCommand(string query = "", IDbConnection connection = null)
+        public IDbCommand GetCommand(string query = "", IDbConnection connection = null)
         {
             return new SqlCommand(query, (connection ?? GetConnection()) as SqlConnection);
         }
 
-        protected static IDbDataParameter GetParameter(string name, object value)
+        public IDbDataParameter GetParameter(string name, object value)
         {
             return new SqlParameter(name, value);
         }
 
-        protected static void EnsureSchema()
+        public void EnsureSchema()
         {
             var query = @"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'chat')
                             BEGIN

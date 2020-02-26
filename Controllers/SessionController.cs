@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ChatServer.DAL;
+using ChatServer.DAL.SqlServer;
 using ChatServer.Exceptions;
 using ChatServer.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                return Ok(AuthDAL.Login(loginRequest.Username, loginRequest.Password));
+                return Ok(new AuthDAL().Login(loginRequest.Username, loginRequest.Password));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)

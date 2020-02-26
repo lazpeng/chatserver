@@ -8,6 +8,7 @@ using ChatServer.Models.Responses;
 using ChatServer.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ChatServer.DAL.SqlServer;
 
 namespace ChatServer.Controllers
 {
@@ -31,7 +32,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                var user = UserDAL.Find(username);
+                var user = new UserDAL().Find(username);
                 if (user != null)
                 {
                     return Ok(user);
@@ -57,12 +58,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if(!AuthDAL.IsTokenValid(token, fromId))
+                if(!new AuthDAL().IsTokenValid(token, fromId))
                 {
                     return Unauthorized();
                 }
 
-                var user = UserDAL.Get(id);
+                var user = new UserDAL().Get(id);
                 if (user != null)
                 {
                     return Ok(user);
@@ -84,7 +85,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                return Ok(UserDAL.Register(user));
+                return Ok(new UserDAL().Register(user));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)
@@ -100,12 +101,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if(!AuthDAL.IsTokenValid(SourceId, Token))
+                if(!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                UserDAL.SendFriendRequest(SourceId, TargetId);
+                new UserDAL().SendFriendRequest(SourceId, TargetId);
                 return Ok();
             } catch (Exception e)
             {
@@ -122,12 +123,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                if (!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                UserDAL.AnswerFriendRequest(SourceId, TargetId, false);
+                new UserDAL().AnswerFriendRequest(SourceId, TargetId, false);
                 return Ok();
             }
             catch (Exception e)
@@ -145,12 +146,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                if (!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                UserDAL.RemoveFriend(SourceId, TargetId);
+                new UserDAL().RemoveFriend(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -168,12 +169,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                if (!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                UserDAL.BlockUser(SourceId, TargetId);
+                new UserDAL().BlockUser(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -191,12 +192,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                if (!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                UserDAL.UnblockUser(SourceId, TargetId);
+                new UserDAL().UnblockUser(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -214,12 +215,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                if (!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                return Ok(UserDAL.FriendList(SourceId));
+                return Ok(new UserDAL().FriendList(SourceId));
             }
             catch (Exception e)
             {
@@ -236,12 +237,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!AuthDAL.IsTokenValid(SourceId, Token))
+                if (!new AuthDAL().IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                return Ok(UserDAL.BlockList(SourceId));
+                return Ok(new UserDAL().BlockList(SourceId));
             }
             catch (Exception e)
             {

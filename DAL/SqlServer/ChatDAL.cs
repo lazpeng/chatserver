@@ -6,12 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using ChatServer.Models;
+using ChatServer.DAL.Interfaces;
 
-namespace ChatServer.DAL
+namespace ChatServer.DAL.SqlServer
 {
-    public abstract class ChatDAL : BaseDAL
+    public class ChatDAL : BaseDAL, IChatDAL
     {
-        private static void EnsureDatabase()
+        public void EnsureDatabase()
         {
             EnsureSchema();
 
@@ -31,7 +32,7 @@ namespace ChatServer.DAL
             conn.Execute(query);
         }
 
-        public static void SendMessage(SendMessageRequest request)
+        public void SendMessage(SendMessageRequest request)
         {
             EnsureDatabase();
 
@@ -43,7 +44,7 @@ namespace ChatServer.DAL
             conn.Execute(query, request);
         }
 
-        public static CheckNewResponse CheckNewMessages(CheckNewRequest request)
+        public CheckNewResponse CheckNewMessages(CheckNewRequest request)
         {
             EnsureDatabase();
 
@@ -66,7 +67,7 @@ namespace ChatServer.DAL
             return new CheckNewResponse { NewMessages = newMessages, TargetLastReadId = lastSeenId };
         }
 
-        public static void UpdateSeen(UpdateSeenRequest request)
+        public void UpdateSeen(UpdateSeenRequest request)
         {
             EnsureDatabase();
 
