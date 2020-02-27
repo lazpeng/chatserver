@@ -74,15 +74,14 @@ namespace ChatServer.DAL.SqlServer
             }
         }
 
-        public UserModel Find(string username)
+        public List<UserModel> Find(string username)
         {
             EnsureDatabase();
 
             using var conn = GetConnection();
             
-            var result = conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE UserName=@UserName AND FindInSearch=1",
-                                                new { UserName = username });
-            return result.Count() == 0 ? null : result.First();
+            return conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE UserName=@UserName OR (UserName like '%@UserName%' AND FindInSearch=1)",
+                                                new { UserName = username }).ToList();
         }
 
         public UserModel Get(string id)
@@ -224,7 +223,7 @@ namespace ChatServer.DAL.SqlServer
         {
             using var conn = GetConnection();
 
-            var query = @"SELECT u.* FROM chat.USERS WHERE (Id IN (SELECT A FROM chat.FRIENDS WHERE B=@Id)
+            var query = @"SELECT * FROM chat.USERS WHERE (Id IN (SELECT A FROM chat.FRIENDS WHERE B=@Id)
                             OR Id IN (SELECT B FROM chat.FRIENDS WHERE A=@Id)) AND ACCEPTED = 1";
 
             return conn.Query<UserModel>(query, new { Id = UserId }).ToList();

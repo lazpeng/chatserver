@@ -9,7 +9,7 @@ namespace ChatServer.DAL.Interfaces
     public interface IUserDAL
     {
         void EnsureDatabase();
-        UserModel Find(string Username);
+        List<UserModel> Find(string Username);
         UserModel Get(string UserId);
         UserModel Register(UserModel User);
         void SendFriendRequest(string SourceId, string TargetId);
