@@ -9,12 +9,13 @@ using ChatServer.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ChatServer.DAL.SqlServer;
+using ChatServer.Controllers.Interfaces;
 
 namespace ChatServer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserController : ControllerBase
+    public class UserController : ControllerBase, IUserController
     {
         private readonly ILogger<UserController> _logger;
 
@@ -27,8 +28,8 @@ namespace ChatServer.Controllers
         /// Gets an user based on its username.
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
-        [HttpGet("find/{username}")]
-        public IActionResult Find(string username)
+        [HttpGet("search/{username}")]
+        public IActionResult Search(string username)
         {
             try
             {
@@ -243,6 +244,29 @@ namespace ChatServer.Controllers
                 }
 
                 return Ok(new UserDAL().BlockList(SourceId));
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else return StatusCode(500, e.Message);
+            }
+        }
+
+        [HttpDelete("delete/{FromId}")]
+        public IActionResult DeleteAccount(string FromId, [FromBody] string Token)
+        {
+            try
+            {
+                if (!new AuthDAL().IsTokenValid(FromId, Token))
+                {
+                    return Unauthorized();
+                }
+
+                new UserDAL().DeleteAccount(FromId);
+                return Ok();
             }
             catch (Exception e)
             {

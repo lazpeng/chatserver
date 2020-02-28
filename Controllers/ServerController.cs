@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatServer.Controllers.Interfaces;
 using ChatServer.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,7 +11,7 @@ namespace ChatServer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ServerController : ControllerBase
+    public class ServerController : ControllerBase, IServerController
     {
         private readonly ILogger<ServerController> _logger;
 

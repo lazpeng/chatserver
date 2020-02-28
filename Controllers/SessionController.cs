@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatServer.Controllers.Interfaces;
 using ChatServer.DAL;
 using ChatServer.DAL.SqlServer;
 using ChatServer.Exceptions;
@@ -13,7 +14,7 @@ namespace ChatServer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class SessionController : ControllerBase
+    public class SessionController : ControllerBase, ISessionController
     {
         private readonly ILogger<SessionController> _logger;
 
