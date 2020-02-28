@@ -12,42 +12,25 @@ namespace ChatServer.DAL.SqlServer
 {
     public class ChatDAL : BaseDAL, IChatDAL
     {
-        public void EnsureDatabase()
+        public MessageModel SendMessage(SendMessageRequest request)
         {
-            EnsureSchema();
-
-            var query = @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES 
-                                WHERE TABLE_SCHEMA = 'chat' AND TABLE_NAME = 'MESSAGES') 
-                            CREATE TABLE chat.MESSAGES (
-                                Id BigInt IDENTITY(1,1) PRIMARY KEY,
-                                SourceId CHAR(36) FOREIGN KEY REFERENCES chat.USERS (Id) ON DELETE NO ACTION,
-                                TargetId CHAR(36) FOREIGN KEY REFERENCES chat.USERS (Id) ON DELETE NO ACTION,
-                                DateSent DATETIME NOT NULL,
-                                DateSeen DATETIME,
-                                Content TEXT NOT NULL,
-                                InReplyTo BigInt FOREIGN KEY REFERENCES chat.MESSAGES (Id)
-                            )";
-
-            using var conn = GetConnection();
-            conn.Execute(query);
-        }
-
-        public void SendMessage(SendMessageRequest request)
-        {
-            EnsureDatabase();
-
             using var conn = GetConnection();
 
             var query = @"INSERT INTO chat.MESSAGES (SourceId, TargetId, DateSent, Content, InReplyTo) 
+                            OUTPUT INSERTED.Id as MessageId, INSERTED.SourceId as FromId, INSERTED.Content, INSERTED.DateSent, INSERTED.InReplyTo 
                             VALUES (@SourceId, @TargetId, @DateSent, @Content, @ReplyTo)";
 
-            conn.Execute(query, request);
+            var results = conn.Query<MessageModel>(query, request);
+
+            if (results.Any())
+            {
+                return results.First();
+            }
+            else return null;
         }
 
         public CheckNewResponse CheckNewMessages(CheckNewRequest request)
         {
-            EnsureDatabase();
-
             using var conn = GetConnection();
 
             var query = "SELECT MAX(Id) FROM chat.MESSAGES WHERE SourceId=@SourceId AND TargetId=@TargetId AND DateSeen IS NOT NULL";
@@ -69,8 +52,6 @@ namespace ChatServer.DAL.SqlServer
 
         public void UpdateSeen(UpdateSeenRequest request)
         {
-            EnsureDatabase();
-
             var conn = GetConnection();
 
             var query = "UPDATE chat.MESSAGES SET DateSeen = SYSDATETIME() WHERE Id < @LastSeenId AND SourceId=@TargetId AND TargetId=@TargetId";

@@ -11,6 +11,8 @@ namespace ChatServer.DAL.Interfaces
         IDbConnection GetConnection();
         IDbCommand GetCommand(string Query = "", IDbConnection Connection = null);
         IDbDataParameter GetParameter(string Name, object Value);
-        void EnsureSchema();
+        void PerformUpgrade();
+        long GetDatabaseVersion();
+        long LatestDatabaseVersion { get; }
     }
 }

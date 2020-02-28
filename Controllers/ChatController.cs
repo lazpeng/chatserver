@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatServer.Controllers.Interfaces;
 using ChatServer.DAL;
 using ChatServer.DAL.SqlServer;
 using ChatServer.Exceptions;
@@ -13,7 +14,7 @@ namespace ChatServer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ChatController : ControllerBase
+    public class ChatController : ControllerBase, IChatController
     {
         private readonly ILogger<ChatController> _logger;
 
@@ -37,8 +38,7 @@ namespace ChatServer.Controllers
                     return Unauthorized();
                 }
 
-                new ChatDAL().SendMessage(request);
-                return Ok();
+                return Ok(new ChatDAL().SendMessage(request));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)

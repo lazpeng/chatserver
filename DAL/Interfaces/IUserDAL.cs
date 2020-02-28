@@ -8,7 +8,6 @@ namespace ChatServer.DAL.Interfaces
 {
     public interface IUserDAL
     {
-        void EnsureDatabase();
         List<UserModel> Find(string Username);
         UserModel Get(string UserId);
         UserModel Register(UserModel User);
@@ -20,5 +19,6 @@ namespace ChatServer.DAL.Interfaces
         List<string> BlockList(string UserId);
         bool AreUsersFriends(string IdA, string IdB);
         void RemoveFriend(string SourceId, string TargetId);
+        void DeleteAccount(string Id);
     }
 }

@@ -8,7 +8,6 @@ namespace ChatServer.DAL.Interfaces
 {
     public interface IAuthDAL
     {
-        void EnsureDatabase();
         bool IsTokenValid(string UserId, string Token);
         LoginResponse Login(string Username, string Password);
     }

@@ -1,13 +1,20 @@
 using System;
 using System.Data;
 using System.IO;
+using System.Reflection;
 using ChatServer.DAL.Interfaces;
 using Microsoft.Data.SqlClient;
+using Dapper;
 
 namespace ChatServer.DAL.SqlServer
 {
     public abstract class BaseDAL : IBaseDAL
     {
+        public BaseDAL()
+        {
+            PerformUpgrade();
+        }
+
         private static string Host
         {
             get
@@ -51,6 +58,69 @@ namespace ChatServer.DAL.SqlServer
             }
         }
 
+        public long LatestDatabaseVersion { get; } = 1;
+
+        private string GetUpgradeScript(long version)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+
+            var resourceName = $"ChatServer.DAL.SqlServer.Scripts.v{version}.sql";
+
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            using var reader = new StreamReader(stream);
+
+            return reader.ReadToEnd();
+        }
+
+        public void PerformUpgrade()
+        {
+            long currentVersion = GetDatabaseVersion();
+
+            try
+            {
+                while (currentVersion < LatestDatabaseVersion)
+                {
+                    var script = GetUpgradeScript(currentVersion);
+
+                    var batches = script.Split("GO");
+
+                    using var conn = GetConnection();
+
+                    foreach(var batch in batches)
+                    {
+                        conn.Execute(batch);
+                    }
+
+                    currentVersion = GetDatabaseVersion();
+                }
+            } catch (Exception e)
+            {
+                // TODO: Better log exception
+                Console.WriteLine($"An error occurred when performing database upgrade: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        public long GetDatabaseVersion()
+        {
+            long version;
+
+            try
+            {
+                using var cmd = GetCommand();
+                cmd.CommandText = "SELECT MAX(Version) FROM chat.DBINFO";
+                version = Convert.ToInt64(cmd.ExecuteScalar());
+            } catch (Exception e)
+            {
+                if(!(e is SqlException))
+                {
+                    Console.WriteLine($"Something wrong occurred when checking database version: {e.Message}");
+                }
+                version = 0;
+            }
+
+            return version;
+        }
+
         public IDbConnection GetConnection()
         {
             var conn = new SqlConnection(ConnectionString);
@@ -66,17 +136,6 @@ namespace ChatServer.DAL.SqlServer
         public IDbDataParameter GetParameter(string name, object value)
         {
             return new SqlParameter(name, value);
-        }
-
-        public void EnsureSchema()
-        {
-            var query = @"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'chat')
-                            BEGIN
-                                EXEC('CREATE SCHEMA chat')
-                            END";
-
-            using var cmd = GetCommand(query);
-            cmd.ExecuteNonQuery();
         }
     }
 }

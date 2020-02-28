@@ -13,25 +13,6 @@ namespace ChatServer.DAL.SqlServer
     {
         public TimeSpan TokenExpiration = TimeSpan.FromHours(12);
 
-        public void EnsureDatabase()
-        {
-            EnsureSchema();
-
-            var query = @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES 
-                                WHERE TABLE_SCHEMA = 'chat' AND TABLE_NAME = 'SESSIONS') 
-                            CREATE TABLE chat.SESSIONS (
-                                UserId CHAR(36) NOT NULL,
-                                Token CHAR(36) NOT NULL,
-                                CreatedOn DATETIME NOT NULL,
-                                ExpirationDate DATETIME NOT NULL,
-                                CONSTRAINT SESSIONS_PK PRIMARY KEY (UserId, Token),
-                                CHECK (ExpirationDate > SYSDATETIME())
-                            )";
-
-            using var cmd = GetCommand(query);
-            cmd.ExecuteNonQuery();
-        }
-
         /// <summary>
         /// Checks if the given token is valid considering the time and originating user id
         /// </summary>
@@ -40,8 +21,6 @@ namespace ChatServer.DAL.SqlServer
         /// <returns>Boolean result to wether or not the user auth is valid</returns>
         public bool IsTokenValid(string UserId, string Token)
         {
-            EnsureDatabase();
-
             using var cmd = GetCommand();
 
             cmd.CommandText = "SELECT COUNT(*) FROM chat.SESSIONS WHERE UserId = @Id AND Token = @Token AND ExpirationDate < SYSDATETIME()";
@@ -52,8 +31,6 @@ namespace ChatServer.DAL.SqlServer
 
         private string GenerateNewToken(string UserId)
         {
-            EnsureDatabase();
-
             var token = Guid.NewGuid().ToString();
 
             using var conn = GetConnection();
@@ -67,8 +44,6 @@ namespace ChatServer.DAL.SqlServer
 
         public LoginResponse Login(string Username, string Password)
         {
-            EnsureDatabase();
-
             using var cmd = GetCommand();
 
             cmd.CommandText = "SELECT Id, PasswordHash, PasswordSalt FROM chat.USERS WHERE Username=@Username";

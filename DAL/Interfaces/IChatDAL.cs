@@ -10,8 +10,7 @@ namespace ChatServer.DAL.Interfaces
 {
     public interface IChatDAL
     {
-        void EnsureDatabase();
-        void SendMessage(SendMessageRequest Request);
+        MessageModel SendMessage(SendMessageRequest Request);
         CheckNewResponse CheckNewMessages(CheckNewRequest Request);
         void UpdateSeen(UpdateSeenRequest Request);
     }

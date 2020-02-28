@@ -16,68 +16,8 @@ namespace ChatServer.DAL.SqlServer
 {
     public class UserDAL : BaseDAL, IUserDAL
     {
-        public void EnsureDatabase()
-        {
-            EnsureSchema();
-
-            var usersTable = @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES 
-                                WHERE TABLE_SCHEMA = 'chat' AND TABLE_NAME = 'USERS') 
-                        CREATE TABLE chat.USERS (
-                            Id CHAR(36) PRIMARY KEY,
-                            UserName VARCHAR(128) NOT NULL,
-                            FullName VARCHAR(256) NOT NULL,
-                            Email VARCHAR(256),
-                            Bio TEXT,
-                            AccountCreated DATETIME NOT NULL,
-                            LastLogin DATETIME NOT NULL ,
-                            LastSeen DATETIME NOT NULL ,
-                            DateOfBirth DATE NOT NULL,
-                            ProfilePicUrl TEXT,
-                            FindInSearch BIT NOT NULL DEFAULT 1,
-                            OpenChat BIT NOT NULL DEFAULT 1,
-                            PasswordHash CHAR(44) NOT NULL,
-                            PasswordSalt CHAR(44) NOT NULL,
-                            CONSTRAINT USER_UNIQUE UNIQUE (UserName),
-                            CONSTRAINT EMAIL_UNIQUE UNIQUE (Email)
-                        )";
-            
-            var friendsTable = @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES 
-                                WHERE TABLE_SCHEMA = 'chat' AND TABLE_NAME = 'FRIENDS') 
-                            CREATE TABLE chat.FRIENDS (
-                                A CHAR(36) FOREIGN KEY REFERENCES chat.USERS (Id),
-                                B CHAR(36) FOREIGN KEY REFERENCES chat.USERS (Id),
-                                SentDate DATETIME NOT NULL,
-                                SettleDate DATETIME,
-                                Accepted BIT NOT NULL DEFAULT 0,
-                                CONSTRAINT FRIENDS_PK PRIMARY KEY (A, B)
-                            )";
-
-            
-            var blockTable = @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES 
-                                WHERE TABLE_SCHEMA = 'chat' AND TABLE_NAME = 'BLACKLIST') 
-                            CREATE TABLE chat.BLACKLIST (
-                                UserId CHAR(36) FOREIGN KEY REFERENCES chat.USERS (Id),
-                                BlockedId CHAR(36) FOREIGN KEY REFERENCES chat.USERS (Id),
-                                BlockDate DATETIME NOT NULL,
-                                CONSTRAINT BLACKLIST_PK PRIMARY KEY (UserId, BlockedId)
-                            )";
-            
-            var tables = new string[] { usersTable, friendsTable, blockTable };
-
-            using(var cmd = GetCommand())
-            {
-                foreach(var table in tables)
-                {
-                    cmd.CommandText = table;
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
-
         public List<UserModel> Find(string username)
         {
-            EnsureDatabase();
-
             using var conn = GetConnection();
             
             return conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE UserName=@UserName OR (UserName like '%@UserName%' AND FindInSearch=1)",
@@ -86,8 +26,6 @@ namespace ChatServer.DAL.SqlServer
 
         public UserModel Get(string id)
         {
-            EnsureDatabase();
-
             using var conn = GetConnection();
             
             var result = conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE ID=@Id", new { Id = id });
@@ -231,8 +169,6 @@ namespace ChatServer.DAL.SqlServer
 
         public void BlockUser(string SourceId, string BlockedId)
         {
-            EnsureDatabase();
-
             using var cmd = GetCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM chat.BLACKLIST WHERE UserId=@UserId AND Blocked=@BlockedId";
             cmd.Parameters.Add(GetParameter("@UserId", SourceId));
@@ -247,8 +183,6 @@ namespace ChatServer.DAL.SqlServer
 
         public void UnblockUser(string SourceId, string BlockedId)
         {
-            EnsureDatabase();
-
             using var conn = GetConnection();
 
             conn.Execute("DELETE FROM chat.BLACKLIST WHERE UserId=@SourceId AND Blocked=@BlockedId", new { SourceId, BlockedId });
@@ -256,8 +190,6 @@ namespace ChatServer.DAL.SqlServer
 
         public List<string> BlockList(string UserId)
         {
-            EnsureDatabase();
-
             var query = "SELECT Blocked FROM chat.BLACKLIST WHERE UserId=@UserId";
             using var cmd = GetCommand(query);
             cmd.Parameters.Add(GetParameter("@UserId", UserId));
@@ -275,8 +207,6 @@ namespace ChatServer.DAL.SqlServer
 
         public bool AreUsersFriends(string IdA, string IdB)
         {
-            EnsureDatabase();
-
             var query = "SELECT COUNT(*) FROM chat.USERS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
 
             using var cmd = GetCommand(query);
@@ -288,12 +218,18 @@ namespace ChatServer.DAL.SqlServer
 
         public void RemoveFriend(string SourceId, string TargetId)
         {
-            EnsureDatabase();
-
             using var conn = GetConnection();
 
             var query = "DELETE FROM chat.FRIENDS WHERE (A=@SourceId AND B=@TargetId) OR (A = @TargetId AND B=@SourceId)";
             conn.Execute(query, new { SourceId, TargetId });
+        }
+
+        public void DeleteAccount(string Id)
+        {
+            using var conn = GetConnection();
+
+            var query = "DELETE FROM chat.USERS WHERE Id=@Id";
+            conn.Execute(query, new { Id });
         }
     }
 }
