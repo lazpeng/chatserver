@@ -11,7 +11,7 @@ namespace ChatServer.Models.Requests
         [Required(AllowEmptyStrings = false, ErrorMessage = "Source user id is required")]
         public string SourceId { get; set; }
         [Required(ErrorMessage = "Last seen message id is required")]
-        public ulong LastReadId { get; set; }
+        public long LastSeenId { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "Target user chat id is required")]
         public string TargetId { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "Token is required")]

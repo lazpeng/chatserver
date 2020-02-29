@@ -70,7 +70,7 @@ namespace ChatServer.Controllers
             }
         }
 
-        [HttpPut("seen")]
+        [HttpPost("seen")]
         public IActionResult UpdateSeen([FromBody] UpdateSeenRequest request)
         {
             try

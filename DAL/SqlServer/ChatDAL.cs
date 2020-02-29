@@ -17,7 +17,7 @@ namespace ChatServer.DAL.SqlServer
             using var conn = GetConnection();
 
             var query = @"INSERT INTO chat.MESSAGES (SourceId, TargetId, DateSent, Content, InReplyTo) 
-                            OUTPUT INSERTED.Id as MessageId, INSERTED.SourceId as FromId, INSERTED.Content, INSERTED.DateSent, INSERTED.InReplyTo 
+                            OUTPUT INSERTED.Id, INSERTED.SourceId, INSERTED.Content, INSERTED.DateSent, INSERTED.InReplyTo 
                             VALUES (@SourceId, @TargetId, @DateSent, @Content, @ReplyTo)";
 
             var results = conn.Query<MessageModel>(query, request);
@@ -33,15 +33,15 @@ namespace ChatServer.DAL.SqlServer
         {
             using var conn = GetConnection();
 
-            var query = "SELECT MAX(Id) FROM chat.MESSAGES WHERE SourceId=@SourceId AND TargetId=@TargetId AND DateSeen IS NOT NULL";
+            var query = "SELECT ISNULL(MAX(Id), 0) FROM chat.MESSAGES WHERE SourceId=@SourceId AND TargetId=@TargetId AND DateSeen IS NOT NULL";
 
-            ulong lastSeenId;
+            long lastSeenId;
             using(var cmd = GetCommand(query, conn))
             {
                 cmd.Parameters.Add(GetParameter("@SourceId", request.SourceId));
                 cmd.Parameters.Add(GetParameter("@TargetId", request.TargetId));
 
-                lastSeenId = Convert.ToUInt64(cmd.ExecuteScalar());
+                lastSeenId = Convert.ToInt64(cmd.ExecuteScalar());
             }
 
             query = "SELECT * FROM chat.MESSAGES WHERE SourceId=@TargetId AND TargetId=@SourceId AND Id > @LastReceivedId";
@@ -54,7 +54,7 @@ namespace ChatServer.DAL.SqlServer
         {
             var conn = GetConnection();
 
-            var query = "UPDATE chat.MESSAGES SET DateSeen = SYSDATETIME() WHERE Id < @LastSeenId AND SourceId=@TargetId AND TargetId=@TargetId";
+            var query = "UPDATE chat.MESSAGES SET DateSeen = SYSDATETIME() WHERE Id <= @LastSeenId AND SourceId=@TargetId AND TargetId=@SourceId";
 
             conn.Execute(query, request);
         }

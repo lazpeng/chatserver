@@ -23,7 +23,7 @@ namespace ChatServer.DAL.SqlServer
         {
             using var cmd = GetCommand();
 
-            cmd.CommandText = "SELECT COUNT(*) FROM chat.SESSIONS WHERE UserId = @Id AND Token = @Token AND ExpirationDate < SYSDATETIME()";
+            cmd.CommandText = "SELECT COUNT(*) FROM chat.SESSIONS WHERE UserId = @Id AND Token = @Token AND ExpirationDate > SYSDATETIME()";
             cmd.Parameters.Add(GetParameter("@Id", UserId));
             cmd.Parameters.Add(GetParameter("@Token", Token));
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
@@ -36,7 +36,7 @@ namespace ChatServer.DAL.SqlServer
             using var conn = GetConnection();
 
             conn.Execute(@"INSERT INTO chat.SESSIONS(UserId, Token, CreatedOn, ExpirationDate) VALUES
-                        (@UserId, @Token, SYSDATETIME(), dateadd(HOUR, @HoursExpiration, SYSDATETIME())",
+                        (@UserId, @Token, SYSDATETIME(), dateadd(HOUR, @HoursExpiration, SYSDATETIME()))",
                 new { UserId, Token = token, HoursExpiration = TokenExpiration.TotalHours });
 
             return token;
@@ -58,7 +58,7 @@ namespace ChatServer.DAL.SqlServer
 
                 if (hash == new UserDAL().CalculateHash(Password, salt))
                 {
-                    return new LoginResponse { Success = true, ErrorMessage = "", Token = GenerateNewToken(userId) };
+                    return new LoginResponse { Success = true, ErrorMessage = "", Id = userId, Token = GenerateNewToken(userId) };
                 }
             }
 

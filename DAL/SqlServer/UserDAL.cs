@@ -19,9 +19,11 @@ namespace ChatServer.DAL.SqlServer
         public List<UserModel> Find(string username)
         {
             using var conn = GetConnection();
+
+            var fuzzyUsername = $"%{username}%";
             
-            return conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE UserName=@UserName OR (UserName like '%@UserName%' AND FindInSearch=1)",
-                                                new { UserName = username }).ToList();
+            return conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE UserName=@UserName OR (UserName like @Fuzzy AND FindInSearch=1)",
+                                                new { UserName = username, Fuzzy = fuzzyUsername }).ToList();
         }
 
         public UserModel Get(string id)
@@ -45,7 +47,7 @@ namespace ChatServer.DAL.SqlServer
         {
             using var algo = new SHA256Managed();
 
-            var finalBytes = Encoding.UTF8.GetBytes(password.Concat(salt).ToString());
+            var finalBytes = Encoding.UTF8.GetBytes(password + salt);
 
             return Convert.ToBase64String(algo.ComputeHash(finalBytes));
         }
@@ -101,7 +103,7 @@ namespace ChatServer.DAL.SqlServer
             // If we're already friends, do nothing
             using (cmd = GetCommand())
             {
-                cmd.CommandText = "SELECT COUNT(*) FROM chat.FRIENDS WHERE (A = @Id AND B = @Target) OR (A = @Target AND B = @Id)";
+                cmd.CommandText = "SELECT COUNT(*) FROM chat.FRIENDS WHERE ((A = @Id AND B = @Target) OR (A = @Target AND B = @Id)) AND Accepted = 1";
                 cmd.Parameters.Add(GetParameter("@Id", SourceId));
                 cmd.Parameters.Add(GetParameter("@Target", TargetId));
 
@@ -133,7 +135,7 @@ namespace ChatServer.DAL.SqlServer
 
                 if (Convert.ToInt32(cmd.ExecuteScalar()) > 0)
                 {
-                    cmd.CommandText = "UPDATE chat.FRIENDS SET SettleDate = SYSDATETIME() AND Accepted = 1 WHERE A = @Target AND B = @Id";
+                    cmd.CommandText = "UPDATE chat.FRIENDS SET SettleDate = SYSDATETIME(), Accepted = 1 WHERE A = @Target AND B = @Id";
                     cmd.ExecuteNonQuery();
 
                     return;
@@ -143,7 +145,7 @@ namespace ChatServer.DAL.SqlServer
             // None of the above, so send the friend request
             using (cmd = GetCommand())
             {
-                cmd.CommandText = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, SYSTDATETIME())";
+                cmd.CommandText = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, SYSDATETIME())";
                 cmd.Parameters.Add(GetParameter("@Id", SourceId));
                 cmd.Parameters.Add(GetParameter("@Target", TargetId));
 
@@ -153,18 +155,18 @@ namespace ChatServer.DAL.SqlServer
 
         public void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
         {
-            var query = "UPDATE chat.FRIENDS SET SettleDate = SYSDATETIME() AND Accepted = @Accepted WHERE A = @Id AND B = @Target";
+            var query = "UPDATE chat.FRIENDS SET SettleDate = SYSDATETIME(), Accepted = @Accepted WHERE A = @Id AND B = @Target";
             GetConnection().Execute(query, new { Accepted = Accepted ? 1 : 0, A = SourceId, B = TargetId });
         }
 
-        public List<UserModel> FriendList(string UserId)
+        public List<FriendModel> FriendList(string UserId)
         {
             using var conn = GetConnection();
 
-            var query = @"SELECT * FROM chat.USERS WHERE (Id IN (SELECT A FROM chat.FRIENDS WHERE B=@Id)
-                            OR Id IN (SELECT B FROM chat.FRIENDS WHERE A=@Id)) AND ACCEPTED = 1";
+            var query = @"SELECT A as SourceId, B as TargetId, SettleDate as FriendsSince, SentDate as RequestSent 
+                          FROM chat.FRIENDS WHERE (A = @Id OR B = @Id) AND (SettleDate IS NULL OR Accepted = 1)";
 
-            return conn.Query<UserModel>(query, new { Id = UserId }).ToList();
+            return conn.Query<FriendModel>(query, new { Id = UserId }).ToList();
         }
 
         public void BlockUser(string SourceId, string BlockedId)

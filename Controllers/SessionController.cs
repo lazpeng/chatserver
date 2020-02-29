@@ -23,7 +23,7 @@ namespace ChatServer.Controllers
             _logger = logger;
         }
 
-        [HttpPut("login")]
+        [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest loginRequest)
         {
             try

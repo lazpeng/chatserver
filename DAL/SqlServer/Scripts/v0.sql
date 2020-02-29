@@ -10,8 +10,8 @@ CREATE TABLE chat.USERS (
     Email VARCHAR(256),
     Bio TEXT,
     AccountCreated DATETIME NOT NULL,
-    LastLogin DATETIME NOT NULL ,
-    LastSeen DATETIME NOT NULL ,
+    LastLogin DATETIME NOT NULL,
+    LastSeen DATETIME NOT NULL,
     DateOfBirth DATE NOT NULL,
     ProfilePicUrl TEXT,
     FindInSearch BIT NOT NULL DEFAULT 1,
@@ -73,12 +73,12 @@ GO
 -- we set up a trigger to delete all user related rows in other tables
 CREATE TRIGGER chat.TK_USERS_DELETE ON chat.USERS FOR DELETE AS
 DECLARE
-    @OldId INT;
+    @OldId CHAR(36);
 
     SELECT @OldId = del.ID from deleted del;
 
     DELETE FROM chat.FRIENDS WHERE A = @OldId OR B = @OldId;
-    DELETE FROM chat.BLOCKLIST WHERE UserId = @OldId or BlockedId = @OldId;
+    DELETE FROM chat.BLOCKLIST WHERE UserId = @OldId OR BlockedId = @OldId;
     DELETE FROM chat.SESSIONS WHERE UserId = @OldId;
     DELETE FROM chat.MESSAGES WHERE SourceId = @OldId;
 

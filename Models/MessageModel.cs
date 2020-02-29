@@ -7,10 +7,10 @@ namespace ChatServer.Models
 {
     public class MessageModel
     {
-        public ulong MessageId { get; set; }
-        public string FromId { get; set; }
+        public long Id { get; set; }
+        public string SourceId { get; set; }
         public string Content { get; set; }
         public DateTime DateSent { get; set; }
-        public ulong? InReplyTo { get; set; }
+        public long? InReplyTo { get; set; }
     }
 }

@@ -17,6 +17,6 @@ namespace ChatServer.Models.Requests
         public string Token { get; set; }
         [Required(AllowEmptyStrings = true, ErrorMessage = "Message content is required")]
         public string Content { get; set; }
-        public ulong? ReplyTo { get; set; }
+        public long? ReplyTo { get; set; }
     }
 }

@@ -13,7 +13,7 @@ namespace ChatServer.DAL.Interfaces
         UserModel Register(UserModel User);
         void SendFriendRequest(string SourceId, string TargetId);
         void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted);
-        List<UserModel> FriendList(string UserId);
+        List<FriendModel> FriendList(string UserId);
         void BlockUser(string SourceId, string TargetId);
         void UnblockUser(string SourceId, string TargetId);
         List<string> BlockList(string UserId);

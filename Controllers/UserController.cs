@@ -59,7 +59,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if(!new AuthDAL().IsTokenValid(token, fromId))
+                if(!new AuthDAL().IsTokenValid(fromId, token))
                 {
                     return Unauthorized();
                 }
