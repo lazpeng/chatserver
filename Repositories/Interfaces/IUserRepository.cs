@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ChatServer.DAL.Interfaces
+namespace ChatServer.Repositories.Interfaces
 {
-    public interface IUserDAL
+    public interface IUserRepository
     {
-        List<UserModel> Find(string Username);
+        List<UserModel> Find(string Username, bool IncludePartialMatches = true);
         UserModel Get(string UserId);
         UserModel Register(UserModel User);
+        bool HasFriendRequestSentToTarget(string SourceId, string TargetId);
+        bool HasFriendRequestFromTarget(string SourceId, string TargetId);
         void SendFriendRequest(string SourceId, string TargetId);
         void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted);
         List<FriendModel> FriendList(string UserId);
@@ -20,5 +22,7 @@ namespace ChatServer.DAL.Interfaces
         bool AreUsersFriends(string IdA, string IdB);
         void RemoveFriend(string SourceId, string TargetId);
         void DeleteAccount(string Id);
+        void UpdateLastLogin(string UserId);
+        void UpdateLastSeen(string UserId);
     }
 }

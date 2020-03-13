@@ -6,12 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ChatServer.DAL.Interfaces
+namespace ChatServer.Repositories.Interfaces
 {
-    public interface IChatDAL
+    public interface IChatRepository
     {
         MessageModel SendMessage(SendMessageRequest Request);
         CheckNewResponse CheckNewMessages(CheckNewRequest Request);
-        void UpdateSeen(UpdateSeenRequest Request);
+        void UpdateSeenMessage(UpdateSeenRequest Request);
+        LastSeenResponse GetLastSeenMessage(GetLastSeenRequest request);
     }
 }

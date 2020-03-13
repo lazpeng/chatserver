@@ -4,9 +4,9 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ChatServer.DAL.Interfaces
+namespace ChatServer.Repositories.Interfaces
 {
-    public interface IBaseDAL
+    public interface IBaseRepository
     {
         IDbConnection GetConnection();
         IDbCommand GetCommand(string Query = "", IDbConnection Connection = null);

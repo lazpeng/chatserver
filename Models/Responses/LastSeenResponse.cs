@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace ChatServer.Models.Responses
 {
-    public class CheckNewResponse
+    public class LastSeenResponse
     {
-        public List<MessageModel> NewMessages { get; set; }
+        public long LastSeenId { get; set; }
     }
 }

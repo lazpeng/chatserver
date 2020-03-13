@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatServer.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -25,6 +26,19 @@ namespace ChatServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var connectionString = Configuration.GetConnectionString("Default");
+
+            switch(Configuration.GetValue<string>("Database").ToUpper())
+            {
+                case "POSTGRESQL":
+                    services.AddSingleton<IAuthRepository>(new Repositories.PostgreSQL.AuthRepository(connectionString));
+                    services.AddSingleton<IChatRepository>(new Repositories.PostgreSQL.ChatRepository(connectionString));
+                    services.AddSingleton<IUserRepository>(new Repositories.PostgreSQL.UserRepository(connectionString));
+                    break;
+                default:
+                    throw new Exception($"Unrecognized database \"{Configuration.GetValue<string>("Database")}\"");
+            }
+
             services.AddControllers();
         }
 
