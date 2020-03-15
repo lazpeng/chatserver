@@ -31,16 +31,6 @@ namespace ChatServer.Repositories.PostgreSQL
             else return null;
         }
 
-        public CheckNewResponse CheckNewMessages(CheckNewRequest request)
-        {
-            using var conn = GetConnection();
-
-            var query = "SELECT * FROM chat.MESSAGES WHERE SourceId=@TargetId AND Id > @LastReceivedId";
-            var newMessages = conn.Query<MessageModel>(query, request).ToList();
-
-            return new CheckNewResponse { NewMessages = newMessages };
-        }
-
         public void UpdateSeenMessage(UpdateSeenRequest request)
         {
             var conn = GetConnection();
@@ -62,6 +52,70 @@ namespace ChatServer.Repositories.PostgreSQL
                 return results.First();
             }
             else return new LastSeenResponse { LastSeenId = -1 };
+        }
+
+        public List<MessageModel> GetSentMessages(string UserId, long OffsetId)
+        {
+            using var conn = GetConnection();
+
+            var query = "SELECT * FROM chat.MESSAGES WHERE TargetId=@UserId AND Id > @OffsetId";
+
+            return conn.Query<MessageModel>(query, new { UserId, OffsetId }).ToList();
+        }
+
+        public List<MessageModel> GetEditedMessages(string UserId, long OffsetId)
+        {
+            using var conn = GetConnection();
+
+            var query = "SELECT m.Id as Id, m.SourceId as SourceId, e.NewContent as Content, e.DateEdited as DateSent, m.InReplyTo as InReplyTo" +
+                        " FROM chat.EDITED e INNER JOIN chat.MESSAGES m ON e.MessageId = m.Id WHERE m.TargetId = @UserId and e.Id > @OffsetId";
+
+            return conn.Query<MessageModel>(query, new { UserId, OffsetId }).ToList();
+        }
+
+        public List<long> GetDeletedMessages(string UserId, long OffsetId)
+        {
+            using var conn = GetConnection();
+
+            var query = "SELECT m.Id FROM chat.DELETED d INNER JOIN chat.MESSAGES m ON d.MessageId = m.Id WHERE m.TargetId = @UserId AND d.Id > @OffsetId";
+
+            return conn.Query<long>(query, new { UserId, OffsetId }).ToList();
+        }
+
+        public void EditMessage(EditMessageRequest request)
+        {
+            using var conn = GetConnection();
+
+            var query = "INSERT INTO chat.EDITED (MessageId, NewContent, DateEdited) VALUES (@MessageId, @NewContent, @DateEdited)";
+
+            conn.Execute(query, request);
+        }
+
+        public bool IsMessageDeleted(long Id)
+        {
+            using var conn = GetConnection();
+
+            var query = "SELECT COUNT(*) FROM chat.DELETED WHERE MessageId = @Id";
+
+            return conn.QuerySingle<long>(query, new { Id }) != 0;
+        }
+
+        public void DeleteMessage(DeleteMessageRequest request)
+        {
+            using var conn = GetConnection();
+
+            var query = "INSERT INTO chat.DELETED (MessageId, DateDeleted) VALUES (@MessageId, @DateDeleted)";
+
+            conn.Execute(query, request);
+        }
+
+        public string GetSentUserId(long MessageId)
+        {
+            var query = "SELECT SourceId FROM chat.MESSAGES WHERE Id=@MessageId";
+
+            using var conn = GetConnection();
+
+            return conn.QuerySingleOrDefault<string>(query, new { MessageId });
         }
     }
 }

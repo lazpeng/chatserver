@@ -1,4 +1,5 @@
-﻿using ChatServer.Models.Responses;
+﻿using ChatServer.Domain.Interfaces;
+using ChatServer.Models.Responses;
 using ChatServer.Repositories.Interfaces;
 using System;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace ChatServer.Domain
 {
-    public class AuthDomain
+    public class AuthDomain : IAuthDomain
     {
         private readonly IAuthRepository authRepository;
         private readonly IUserRepository userRepository;

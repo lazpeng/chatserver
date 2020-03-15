@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ChatServer.Models;
-using ChatServer.Models.Responses;
 using ChatServer.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ChatServer.Controllers.Interfaces;
-using ChatServer.Repositories.Interfaces;
-using ChatServer.Domain;
+using ChatServer.Domain.Interfaces;
 
 namespace ChatServer.Controllers
 {
@@ -18,14 +16,14 @@ namespace ChatServer.Controllers
     public class UserController : ControllerBase, IUserController
     {
         private readonly ILogger<UserController> _logger;
-        private readonly IUserRepository _userRepository;
-        private readonly IAuthRepository _authRepository;
+        private readonly IUserDomain _userDomain;
+        private readonly IAuthDomain _authDomain;
 
-        public UserController(ILogger<UserController> logger, IUserRepository userRepository, IAuthRepository authRepository)
+        public UserController(ILogger<UserController> logger, IUserDomain userDomain, IAuthDomain authDomain)
         {
             _logger = logger;
-            _userRepository = userRepository;
-            _authRepository = authRepository;
+            _authDomain = authDomain;
+            _userDomain = userDomain;
         }
 
         ///<summary>
@@ -37,7 +35,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                var user = _userRepository.Find(username);
+                var user = _userDomain.Search(username);
                 if (user != null)
                 {
                     return Ok(user);
@@ -63,12 +61,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if(!new AuthDomain(_authRepository, _userRepository).IsTokenValid(fromId, token))
+                if(!_authDomain.IsTokenValid(fromId, token))
                 {
                     return Unauthorized();
                 }
 
-                var user = _userRepository.Get(id);
+                var user = _userDomain.Get(fromId, id);
                 if (user != null)
                 {
                     return Ok(user);
@@ -90,7 +88,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                return Ok(_userRepository.Register(user));
+                return Ok(_userDomain.Register(user));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)
@@ -106,12 +104,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if(!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if(!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userRepository.SendFriendRequest(SourceId, TargetId);
+                _userDomain.SendFriendRequest(SourceId, TargetId);
                 return Ok();
             } catch (Exception e)
             {
@@ -128,12 +126,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if (!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userRepository.AnswerFriendRequest(SourceId, TargetId, false);
+                _userDomain.AnswerFriendRequest(SourceId, TargetId, false);
                 return Ok();
             }
             catch (Exception e)
@@ -151,12 +149,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if (!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userRepository.RemoveFriend(SourceId, TargetId);
+                _userDomain.RemoveFriend(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -174,12 +172,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if (!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userRepository.BlockUser(SourceId, TargetId);
+                _userDomain.BlockUser(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -197,12 +195,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if (!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userRepository.UnblockUser(SourceId, TargetId);
+                _userDomain.RemoveBlock(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -220,12 +218,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if (!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                return Ok(_userRepository.FriendList(SourceId));
+                return Ok(_userDomain.FriendList(SourceId));
             }
             catch (Exception e)
             {
@@ -242,12 +240,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(SourceId, Token))
+                if (!_authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                return Ok(_userRepository.BlockList(SourceId));
+                return Ok(_userDomain.BlockList(SourceId));
             }
             catch (Exception e)
             {
@@ -264,12 +262,12 @@ namespace ChatServer.Controllers
         {
             try
             {
-                if (!new AuthDomain(_authRepository, _userRepository).IsTokenValid(FromId, Token))
+                if (!_authDomain.IsTokenValid(FromId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userRepository.DeleteAccount(FromId);
+                _userDomain.DeleteAccount(FromId);
                 return Ok();
             }
             catch (Exception e)

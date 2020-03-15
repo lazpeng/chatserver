@@ -116,18 +116,22 @@ namespace ChatServer.Repositories.PostgreSQL
             return conn.Query<FriendModel>(query, new { Id = UserId }).ToList();
         }
 
-        public void BlockUser(string SourceId, string BlockedId)
+        public bool IsUserBlocked(string SourceId, string BlockedId)
         {
             using var cmd = GetCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM chat.BLOCKLIST WHERE UserId=@UserId AND Blocked=@BlockedId";
             cmd.Parameters.Add(GetParameter("@UserId", SourceId));
             cmd.Parameters.Add(GetParameter("@BlockedId", BlockedId));
 
-            if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
-            {
-                cmd.CommandText = "INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP)";
-                cmd.ExecuteNonQuery();
-            }
+            return Convert.ToInt32(cmd.ExecuteScalar()) != 0;
+        }
+
+        public void BlockUser(string SourceId, string BlockedId)
+        {
+            using var cmd = GetCommand();
+
+            cmd.CommandText = "INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP)";
+            cmd.ExecuteNonQuery();
         }
 
         public void UnblockUser(string SourceId, string BlockedId)

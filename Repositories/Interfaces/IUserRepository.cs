@@ -24,5 +24,6 @@ namespace ChatServer.Repositories.Interfaces
         void DeleteAccount(string Id);
         void UpdateLastLogin(string UserId);
         void UpdateLastSeen(string UserId);
+        bool IsUserBlocked(string SourceId, string BlockedId);
     }
 }

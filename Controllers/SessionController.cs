@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChatServer.Controllers.Interfaces;
 using ChatServer.Domain;
+using ChatServer.Domain.Interfaces;
 using ChatServer.Exceptions;
 using ChatServer.Models.Requests;
-using ChatServer.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -17,14 +17,12 @@ namespace ChatServer.Controllers
     public class SessionController : ControllerBase, ISessionController
     {
         private readonly ILogger<SessionController> _logger;
-        private readonly IUserRepository _userRepository;
-        private readonly IAuthRepository _authRepository;
+        private readonly IAuthDomain _authDomain;
 
-        public SessionController(ILogger<SessionController> logger, IUserRepository userRepository, IAuthRepository authRepository)
+        public SessionController(ILogger<SessionController> logger, IAuthDomain authDomain)
         {
             _logger = logger;
-            _userRepository = userRepository;
-            _authRepository = authRepository;
+            _authDomain = authDomain;
         }
 
         [HttpPost("login")]
@@ -32,7 +30,7 @@ namespace ChatServer.Controllers
         {
             try
             {
-                return Ok(new AuthDomain(_authRepository, _userRepository).PerformLogin(loginRequest.Username, loginRequest.Password));
+                return Ok(_authDomain.PerformLogin(loginRequest.Username, loginRequest.Password));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)

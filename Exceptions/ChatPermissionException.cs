@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace ChatServer.Exceptions
 {
-    public class ChatValidationException : ChatBaseException
+    public class ChatPermissionException : ChatBaseException
     {
-        public ChatValidationException(string Message = "") : base(Message)
+        public ChatPermissionException(string Message = "") : base(Message)
         {
 
         }

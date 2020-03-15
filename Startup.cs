@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatServer.Domain;
+using ChatServer.Domain.Interfaces;
 using ChatServer.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -38,6 +40,10 @@ namespace ChatServer
                 default:
                     throw new Exception($"Unrecognized database \"{Configuration.GetValue<string>("Database")}\"");
             }
+
+            services.AddScoped(typeof(IUserDomain), typeof(UserDomain));
+            services.AddScoped(typeof(IChatDomain), typeof(ChatDomain));
+            services.AddScoped(typeof(IAuthDomain), typeof(AuthDomain));
 
             services.AddControllers();
         }
