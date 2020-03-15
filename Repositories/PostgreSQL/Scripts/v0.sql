@@ -2,6 +2,12 @@
 
 CREATE SCHEMA IF NOT EXISTS chat;
 
+-- Contains information about currently installed versions
+CREATE TABLE IF NOT EXISTS chat.DbUpgrade (
+    Version INT PRIMARY KEY,
+    DateInstalled TIMESTAMP NOT NULL
+);
+
 -- Information about registered users
 CREATE TABLE IF NOT EXISTS chat.USERS (
     Id CHAR(36) PRIMARY KEY,
@@ -66,8 +72,19 @@ CREATE TABLE IF NOT EXISTS chat.MESSAGES (
     CONSTRAINT MESSAGES_REPLY_FK  FOREIGN KEY (InReplyTo) REFERENCES chat.MESSAGES (Id) ON DELETE NO ACTION
 );
 
--- Contains information about currently installed versions
-CREATE TABLE IF NOT EXISTS chat.DbUpgrade (
-    Version INT PRIMARY KEY,
-    DateInstalled TIMESTAMP NOT NULL
+-- History of message edits
+CREATE TABLE IF NOT EXISTS chat.EDITED (
+    Id BIGSERIAL PRIMARY KEY,
+    MessageId BIGINT NOT NULL,
+    NewContent TEXT NOT NULL,
+    DateEdited TIMESTAMPTZ NOT NULL,
+    CONSTRAINT EDITED_FK FOREIGN KEY (MessageId) REFERENCES chat.MESSAGES (Id) ON DELETE CASCADE
+);
+
+--  History of message deletions
+CREATE TABLE IF NOT EXISTS chat.DELETED (
+    Id BIGSERIAL PRIMARY KEY,
+    MessageId BIGINT NOT NULL,
+    DateDeleted TIMESTAMPTZ NOT NULL,
+    CONSTRAINT DELETED_FK FOREIGN KEY (MessageId) REFERENCES chat.MESSAGES (Id) ON DELETE CASCADE
 );

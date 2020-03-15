@@ -43,14 +43,14 @@ namespace ChatServer.Repositories.PostgreSQL
         {
             using var conn = GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP() WHERE Id=@UserId", new { UserId });
+            conn.Execute("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
         public void UpdateLastSeen(string UserId)
         {
             using var conn = GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP() WHERE Id=@UserId", new { UserId });
+            conn.Execute("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
         public UserModel Register(UserModel user)
@@ -63,7 +63,7 @@ namespace ChatServer.Repositories.PostgreSQL
             {
                 conn.Execute("INSERT INTO chat.USERS(Id, UserName, FullName, Email, Bio, AccountCreated," +
                     " LastLogin, LastSeen, DateOfBirth, FindInSearch, OpenChat, PasswordHash, PasswordSalt) VALUES (" +
-                    " @Id, @Username, @FullName, @Email, @Bio, CURRENT_TIMESTAMP(), NULL, NULL, @DateOfBirth," +
+                    " @Id, @Username, @FullName, @Email, @Bio, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @DateOfBirth," +
                     " @FindInSearch, @OpenChat, '', '')", user);
 
                 new AuthDomain(new AuthRepository(ConnectionString), this).UpdateUserPassword(user.Id, user.Password);
@@ -91,7 +91,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void SendFriendRequest(string SourceId, string TargetId)
         {
-            var query = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, CURRENT_TIMESTAMP())";
+            var query = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, CURRENT_TIMESTAMP)";
             using var cmd = GetCommand(query);
 
             cmd.Parameters.Add(GetParameter("@Id", SourceId));
@@ -102,7 +102,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
         {
-            var query = "UPDATE chat.FRIENDS SET SettleDate = SYSDATETIME(), Accepted = @Accepted WHERE A = @Id AND B = @Target";
+            var query = "UPDATE chat.FRIENDS SET SettleDate = CURRENT_TIMESTAMP, Accepted = @Accepted WHERE A = @Id AND B = @Target";
             GetConnection().Execute(query, new { Accepted = Accepted ? 1 : 0, A = SourceId, B = TargetId });
         }
 
@@ -125,7 +125,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
             if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
             {
-                cmd.CommandText = "INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP())";
+                cmd.CommandText = "INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP)";
                 cmd.ExecuteNonQuery();
             }
         }

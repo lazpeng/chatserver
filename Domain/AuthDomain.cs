@@ -42,7 +42,7 @@ namespace ChatServer.Domain
             var newSalt = GenerateSalt();
             var newHash = CalculateHash(Password, newSalt);
 
-            authRepository.SavePasswordHash(UserId, newHash);
+            authRepository.SavePasswordHash(UserId, newHash, newSalt);
         }
 
         public bool IsTokenValid(string UserId, string Token)

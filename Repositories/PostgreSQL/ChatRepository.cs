@@ -45,7 +45,7 @@ namespace ChatServer.Repositories.PostgreSQL
         {
             var conn = GetConnection();
 
-            var query = "UPDATE chat.MESSAGES SET DateSeen = CURRENT_TIMESTAMP() WHERE Id <= @LastSeenId AND SourceId=@TargetId AND TargetId=@SourceId";
+            var query = "UPDATE chat.MESSAGES SET DateSeen = CURRENT_TIMESTAMP WHERE Id <= @LastSeenId AND SourceId=@TargetId AND TargetId=@SourceId";
 
             conn.Execute(query, request);
         }
