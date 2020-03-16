@@ -15,8 +15,29 @@ namespace ChatServer.Repositories.PostgreSQL
     {
         protected readonly string ConnectionString;
 
+        private string FromHerokuConnectionString(string Conn)
+        {
+            var databaseUri = new Uri(Conn);
+            var userInfo = databaseUri.UserInfo.Split(':');
+
+            var builder = new NpgsqlConnectionStringBuilder
+            {
+                Host = databaseUri.Host,
+                Port = databaseUri.Port,
+                Username = userInfo[0],
+                Password = userInfo[1],
+                Database = databaseUri.LocalPath.TrimStart('/')
+            };
+
+            return builder.ToString();
+        }
+
         public BaseRepository(string ConnectionString)
         {
+            if (ConnectionString.StartsWith("postgres://"))
+            {
+                ConnectionString = FromHerokuConnectionString(ConnectionString);
+            }
             this.ConnectionString = ConnectionString;
             PerformUpgrade();
         }
