@@ -46,11 +46,17 @@ namespace ChatServer.Repositories.PostgreSQL
 
         private string GetUpgradeScript(long version)
         {
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = Assembly.GetAssembly(typeof (BaseRepository));
 
             var resourceName = $"ChatServer.Repositories.PostgreSQL.Scripts.v{version}.sql";
 
             using var stream = assembly.GetManifestResourceStream(resourceName);
+            if(stream == null)
+            {
+                Console.WriteLine($"Failed to load upgrade script: \"{resourceName}\"");
+                return null;
+            }
+
             using var reader = new StreamReader(stream);
 
             return reader.ReadToEnd();
@@ -72,6 +78,10 @@ namespace ChatServer.Repositories.PostgreSQL
                 while (currentVersion < LatestDatabaseVersion)
                 {
                     var script = GetUpgradeScript(currentVersion);
+                    if(script == null)
+                    {
+                        return;
+                    }
 
                     using var conn = GetConnection();
                     conn.Execute(script);
