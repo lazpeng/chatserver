@@ -28,9 +28,9 @@ namespace ChatServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var connectionString = Configuration.GetConnectionString("Default");
+            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? Configuration.GetConnectionString("Local");
 
-            switch(Configuration.GetValue<string>("Database").ToUpper())
+            switch (Configuration.GetValue<string>("Database").ToUpper())
             {
                 case "POSTGRESQL":
                     services.AddSingleton<IAuthRepository>(new Repositories.PostgreSQL.AuthRepository(connectionString));
