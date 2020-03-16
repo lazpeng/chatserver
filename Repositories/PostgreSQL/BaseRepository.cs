@@ -14,6 +14,7 @@ namespace ChatServer.Repositories.PostgreSQL
     public class BaseRepository : IBaseRepository
     {
         protected readonly string ConnectionString;
+        protected NpgsqlConnection Connection = null;
 
         private string FromHerokuConnectionString(string Conn)
         {
@@ -26,12 +27,7 @@ namespace ChatServer.Repositories.PostgreSQL
                 Port = databaseUri.Port,
                 Username = userInfo[0],
                 Password = userInfo[1],
-                Database = databaseUri.LocalPath.TrimStart('/'),
-                Pooling = true,
-                MinPoolSize = 1,
-                MaxPoolSize = 20,
-                ConnectionIdleLifetime = 2,
-                ConnectionPruningInterval = 3,
+                Database = databaseUri.LocalPath.TrimStart('/')
             };
 
             return builder.ToString();
@@ -126,9 +122,17 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public IDbConnection GetConnection()
         {
-            var conn = new NpgsqlConnection(ConnectionString);
-            conn.Open();
-            return conn;
+            if(Connection == null)
+            {
+                Connection = new NpgsqlConnection(ConnectionString);
+            }
+
+            if(Connection.State != ConnectionState.Open)
+            {
+                Connection.Open();
+            }
+
+            return Connection;
         }
 
         public IDbCommand GetCommand(string query, IDbConnection connection)
