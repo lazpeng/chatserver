@@ -31,6 +31,7 @@ namespace ChatServer.Repositories.PostgreSQL
                 MinPoolSize = 1,
                 MaxPoolSize = 20,
                 ConnectionIdleLifetime = 2,
+                ConnectionPruningInterval = 3,
             };
 
             return builder.ToString();
