@@ -26,7 +26,11 @@ namespace ChatServer.Repositories.PostgreSQL
                 Port = databaseUri.Port,
                 Username = userInfo[0],
                 Password = userInfo[1],
-                Database = databaseUri.LocalPath.TrimStart('/')
+                Database = databaseUri.LocalPath.TrimStart('/'),
+                Pooling = true,
+                MinPoolSize = 1,
+                MaxPoolSize = 20,
+                ConnectionIdleLifetime = 2,
             };
 
             return builder.ToString();
@@ -104,9 +108,8 @@ namespace ChatServer.Repositories.PostgreSQL
 
             try
             {
-                using var cmd = GetCommand();
-                cmd.CommandText = "SELECT MAX(Version) FROM chat.DbUpgrade";
-                version = Convert.ToInt64(cmd.ExecuteScalar());
+                using var conn = GetConnection();
+                version = conn.QuerySingle<long>("SELECT COALESCE(MAX(Version), 0) FROM chat.DbUpgrade");
             }
             catch (Exception e)
             {
@@ -127,9 +130,9 @@ namespace ChatServer.Repositories.PostgreSQL
             return conn;
         }
 
-        public IDbCommand GetCommand(string query = "", IDbConnection connection = null)
+        public IDbCommand GetCommand(string query, IDbConnection connection)
         {
-            return new NpgsqlCommand(query, (connection ?? GetConnection()) as NpgsqlConnection);
+            return new NpgsqlCommand(query, connection as NpgsqlConnection);
         }
 
         public IDbDataParameter GetParameter(string name, object value)

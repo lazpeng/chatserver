@@ -13,7 +13,8 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public Tuple<string, string> GetPasswordHashAndSalt(string UserId)
         {
-            using var cmd = GetCommand("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId");
+            using var conn = GetConnection();
+            using var cmd = GetCommand("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId", conn);
             cmd.Parameters.Add(GetParameter("UserId", UserId));
 
             var reader = cmd.ExecuteReader();
@@ -27,7 +28,8 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<string> GetValidTokensForUser(string Id)
         {
-            using var cmd = GetCommand("SELECT Token FROM chat.SESSIONS WHERE UserId = @Id AND ExpirationDate > CURRENT_TIMESTAMP");
+            using var conn = GetConnection();
+            using var cmd = GetCommand("SELECT Token FROM chat.SESSIONS WHERE UserId = @Id AND ExpirationDate > CURRENT_TIMESTAMP", conn);
             cmd.Parameters.Add(GetParameter("Id", Id));
 
             var result = new List<string>();
