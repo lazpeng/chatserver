@@ -30,6 +30,8 @@ namespace ChatServer
         {
             var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? Configuration.GetConnectionString("Local");
 
+            Console.WriteLine($"Using connection string: \"{connectionString}\"");
+
             switch (Configuration.GetValue<string>("Database").ToUpper())
             {
                 case "POSTGRESQL":

@@ -57,6 +57,8 @@ namespace ChatServer.Repositories.PostgreSQL
 
                     UpdateDbVersion(currentVersion + 1);
                     currentVersion = GetDatabaseVersion();
+
+                    Console.WriteLine($"Successfully performed upgrade to database version {currentVersion}");
                 }
             }
             catch (Exception e)
