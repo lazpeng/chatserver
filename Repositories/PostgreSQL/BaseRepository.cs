@@ -54,6 +54,11 @@ namespace ChatServer.Repositories.PostgreSQL
             if(stream == null)
             {
                 Console.WriteLine($"Failed to load upgrade script: \"{resourceName}\"");
+                Console.WriteLine("Available resources in the assembly: ");
+                foreach(var res in assembly.GetManifestResourceNames())
+                {
+                    Console.WriteLine(res);
+                }
                 return null;
             }
 
