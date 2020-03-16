@@ -65,7 +65,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         private void UpdateDbVersion(long current)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("INSERT INTO chat.DbUpgrade (Version, DateInstalled) VALUES (@current, CURRENT_DATE)", new { current });
         }
@@ -84,7 +84,7 @@ namespace ChatServer.Repositories.PostgreSQL
                         return;
                     }
 
-                    using var conn = GetConnection();
+                    var conn = GetConnection();
                     conn.Execute(script);
 
                     UpdateDbVersion(currentVersion + 1);
@@ -105,7 +105,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
             try
             {
-                using var conn = GetConnection();
+                var conn = GetConnection();
                 version = conn.QuerySingle<long>("SELECT COALESCE(MAX(Version), 0) FROM chat.DbUpgrade");
             }
             catch (Exception e)

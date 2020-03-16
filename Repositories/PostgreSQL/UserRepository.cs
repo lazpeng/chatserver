@@ -17,7 +17,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<UserModel> Find(string username, bool includePartial = true)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             var fuzzyUsername = $"%{username}%";
 
@@ -33,7 +33,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public UserModel Get(string id)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             var result = conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE ID=@Id", new { Id = id });
             return result.Count() == 0 ? null : result.First();
@@ -41,21 +41,21 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void UpdateLastLogin(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
         public void UpdateLastSeen(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
         public UserModel Register(UserModel user)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             user.Id = Guid.NewGuid().ToString();
 
@@ -91,7 +91,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void SendFriendRequest(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             var query = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, CURRENT_TIMESTAMP)";
             using var cmd = GetCommand(query, conn);
 
@@ -109,7 +109,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<FriendModel> FriendList(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             var query = @"SELECT A as SourceId, B as TargetId, SettleDate as FriendsSince, SentDate as RequestSent 
                           FROM chat.FRIENDS WHERE (A = @Id OR B = @Id) AND (SettleDate IS NULL OR Accepted = TRUE)";
@@ -119,7 +119,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public bool IsUserBlocked(string SourceId, string BlockedId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             using var cmd = GetCommand("SELECT COUNT(*) FROM chat.BLOCKLIST WHERE UserId=@UserId AND Blocked=@BlockedId", conn);
             cmd.Parameters.Add(GetParameter("@UserId", SourceId));
             cmd.Parameters.Add(GetParameter("@BlockedId", BlockedId));
@@ -129,7 +129,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void BlockUser(string SourceId, string BlockedId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             using var cmd = GetCommand("INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP)", conn);
 
             cmd.ExecuteNonQuery();
@@ -137,14 +137,14 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void UnblockUser(string SourceId, string BlockedId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("DELETE FROM chat.BLOCKLIST WHERE UserId=@SourceId AND Blocked=@BlockedId", new { SourceId, BlockedId });
         }
 
         public List<string> BlockList(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             var query = "SELECT Blocked FROM chat.BLOCKLIST WHERE UserId=@UserId";
             using var cmd = GetCommand(query, conn);
             cmd.Parameters.Add(GetParameter("@UserId", UserId));
@@ -164,7 +164,7 @@ namespace ChatServer.Repositories.PostgreSQL
         {
             var query = "SELECT COUNT(*) FROM chat.USERS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
 
-            using var conn = GetConnection();
+            var conn = GetConnection();
             using var cmd = GetCommand(query, conn);
             cmd.Parameters.Add(GetParameter("@A", IdA));
             cmd.Parameters.Add(GetParameter("@B", IdB));
@@ -174,7 +174,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void RemoveFriend(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             var query = "DELETE FROM chat.FRIENDS WHERE (A=@SourceId AND B=@TargetId) OR (A = @TargetId AND B=@SourceId)";
             conn.Execute(query, new { SourceId, TargetId });
@@ -182,7 +182,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void DeleteAccount(string Id)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             var query = "DELETE FROM chat.USERS WHERE Id=@Id";
             conn.Execute(query, new { Id });
@@ -190,7 +190,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public bool HasFriendRequestSentToTarget(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A = @Id AND B = @Target AND SettleDate IS NULL";
             using var cmd = GetCommand(query, conn);
 
@@ -202,7 +202,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public bool HasFriendRequestFromTarget(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A=@Target AND B=@Id AND SettleDate IS NULL";
             using var cmd = GetCommand(query, conn);
 

@@ -13,7 +13,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public Tuple<string, string> GetPasswordHashAndSalt(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             using var cmd = GetCommand("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId", conn);
             cmd.Parameters.Add(GetParameter("UserId", UserId));
 
@@ -28,7 +28,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<string> GetValidTokensForUser(string Id)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
             using var cmd = GetCommand("SELECT Token FROM chat.SESSIONS WHERE UserId = @Id AND ExpirationDate > CURRENT_TIMESTAMP", conn);
             cmd.Parameters.Add(GetParameter("Id", Id));
 
@@ -45,21 +45,21 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void SaveLogin(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
         public void SaveLastSeen(string UserId)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
         public void SaveNewToken(string UserId, string Token, TimeSpan Validity)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("INSERT INTO chat.SESSIONS (UserId, Token, CreatedOn, ExpirationDate) VALUES" +
                 " (@UserId, @Token, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '1' HOUR * @ExpirationHours)",
@@ -68,7 +68,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void SavePasswordHash(string UserId, string NewHash, string Salt)
         {
-            using var conn = GetConnection();
+            var conn = GetConnection();
 
             conn.Execute("UPDATE chat.USERS SET PasswordHash=@NewHash, PasswordSalt=@Salt WHERE Id=@UserId", new { UserId, NewHash, Salt });
         }
