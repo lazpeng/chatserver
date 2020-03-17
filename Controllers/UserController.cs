@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ChatServer.Controllers.Interfaces;
 using ChatServer.Domain.Interfaces;
+using ChatServer.Models.Requests;
 
 namespace ChatServer.Controllers
 {
@@ -56,17 +57,17 @@ namespace ChatServer.Controllers
         /// Gets an user based on its id.
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
-        [HttpGet("{fromId}/get/{id}")]
-        public IActionResult Get(string fromId, string id, [FromBody] string token)
+        [HttpPost("get/{id}")]
+        public IActionResult Get(string id, [FromBody] GetUserRequest request)
         {
             try
             {
-                if(!_authDomain.IsTokenValid(fromId, token))
+                if(!_authDomain.IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
 
-                var user = _userDomain.Get(fromId, id);
+                var user = _userDomain.Get(request.SourceId, id);
                 if (user != null)
                 {
                     return Ok(user);

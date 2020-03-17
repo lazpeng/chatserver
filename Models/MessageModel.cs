@@ -11,6 +11,7 @@ namespace ChatServer.Models
         public string SourceId { get; set; }
         public string Content { get; set; }
         public DateTime DateSent { get; set; }
+        public DateTime? DateSeen { get; set; }
         public long? InReplyTo { get; set; }
     }
 }

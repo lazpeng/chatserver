@@ -1,4 +1,5 @@
 ﻿using ChatServer.Models;
+using ChatServer.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace ChatServer.Controllers.Interfaces
     public interface IUserController
     {
         IActionResult Search(string Username);
-        IActionResult Get(string SourceId, string TargetId, [FromBody] string SessionToken);
+        IActionResult Get(string Id, [FromBody] GetUserRequest request);
         IActionResult Register([FromBody] UserModel user);
         IActionResult AddFriend(string SourceId, string TargetId, [FromBody] string SessionToken);
         IActionResult RejectFriendRequest(string SourceId, string TargetId, [FromBody] string SessionToken);
