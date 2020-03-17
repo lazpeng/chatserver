@@ -31,11 +31,11 @@ namespace ChatServer.Repositories.PostgreSQL
             return conn.Query<UserModel>(query, new { UserName = username, Fuzzy = fuzzyUsername }).ToList();
         }
 
-        public UserModel Get(string id)
+        public UserModel Get(string Id)
         {
             using var conn = GetConnection();
 
-            var result = conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE ID=@Id", new { Id = id });
+            var result = conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE ID=@Id", new { Id });
             return result.Count() == 0 ? null : result.First();
         }
 
@@ -162,7 +162,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public bool AreUsersFriends(string IdA, string IdB)
         {
-            var query = "SELECT COUNT(*) FROM chat.USERS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
+            var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
 
             using var conn = GetConnection();
             using var cmd = GetCommand(query, conn);
