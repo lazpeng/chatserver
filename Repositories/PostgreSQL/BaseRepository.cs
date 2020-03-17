@@ -14,7 +14,6 @@ namespace ChatServer.Repositories.PostgreSQL
     public class BaseRepository : IBaseRepository
     {
         protected readonly string ConnectionString;
-        protected NpgsqlConnection Connection = null;
 
         private string FromHerokuConnectionString(string Conn)
         {
@@ -27,7 +26,10 @@ namespace ChatServer.Repositories.PostgreSQL
                 Port = databaseUri.Port,
                 Username = userInfo[0],
                 Password = userInfo[1],
-                Database = databaseUri.LocalPath.TrimStart('/')
+                Database = databaseUri.LocalPath.TrimStart('/'),
+                Pooling = true,
+                MinPoolSize = 1,
+                MaxPoolSize = 20
             };
 
             return builder.ToString();
@@ -65,7 +67,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         private void UpdateDbVersion(long current)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             conn.Execute("INSERT INTO chat.DbUpgrade (Version, DateInstalled) VALUES (@current, CURRENT_DATE)", new { current });
         }
@@ -84,7 +86,7 @@ namespace ChatServer.Repositories.PostgreSQL
                         return;
                     }
 
-                    var conn = GetConnection();
+                    using var conn = GetConnection();
                     conn.Execute(script);
 
                     UpdateDbVersion(currentVersion + 1);
@@ -105,7 +107,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
             try
             {
-                var conn = GetConnection();
+                using var conn = GetConnection();
                 version = conn.QuerySingle<long>("SELECT COALESCE(MAX(Version), 0) FROM chat.DbUpgrade");
             }
             catch (Exception e)
@@ -122,17 +124,10 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public IDbConnection GetConnection()
         {
-            if(Connection == null)
-            {
-                Connection = new NpgsqlConnection(ConnectionString);
-            }
+            var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
 
-            if(Connection.State != ConnectionState.Open)
-            {
-                Connection.Open();
-            }
-
-            return Connection;
+            return conn;
         }
 
         public IDbCommand GetCommand(string query, IDbConnection connection)

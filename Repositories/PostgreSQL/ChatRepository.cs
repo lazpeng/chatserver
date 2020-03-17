@@ -16,7 +16,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public MessageModel SendMessage(SendMessageRequest request)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = @"INSERT INTO chat.MESSAGES (SourceId, TargetId, DateSent, Content, InReplyTo) 
                             VALUES (@SourceId, @TargetId, @DateSent, @Content, @ReplyTo)
@@ -33,7 +33,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void UpdateSeenMessage(UpdateSeenRequest request)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "UPDATE chat.MESSAGES SET DateSeen = CURRENT_TIMESTAMP WHERE Id <= @LastSeenId AND SourceId=@TargetId AND TargetId=@SourceId";
 
@@ -42,7 +42,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public LastSeenResponse GetLastSeenMessage(GetLastSeenRequest request)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "SELECT Max(Id) as LastSeenId FROM chat.MESSAGES WHERE SourceId=@SourceId AND TargetId=@TargetId AND DateSeen IS NOT NULL";
 
@@ -56,7 +56,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<MessageModel> GetSentMessages(string UserId, long OffsetId)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "SELECT * FROM chat.MESSAGES WHERE TargetId=@UserId AND Id > @OffsetId";
 
@@ -65,7 +65,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<MessageModel> GetEditedMessages(string UserId, long OffsetId)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "SELECT m.Id as Id, m.SourceId as SourceId, e.NewContent as Content, e.DateEdited as DateSent, m.InReplyTo as InReplyTo" +
                         " FROM chat.EDITED e INNER JOIN chat.MESSAGES m ON e.MessageId = m.Id WHERE m.TargetId = @UserId and e.Id > @OffsetId";
@@ -75,7 +75,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public List<long> GetDeletedMessages(string UserId, long OffsetId)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "SELECT m.Id FROM chat.DELETED d INNER JOIN chat.MESSAGES m ON d.MessageId = m.Id WHERE m.TargetId = @UserId AND d.Id > @OffsetId";
 
@@ -84,7 +84,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void EditMessage(EditMessageRequest request)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "INSERT INTO chat.EDITED (MessageId, NewContent, DateEdited) VALUES (@MessageId, @NewContent, @DateEdited)";
 
@@ -93,7 +93,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public bool IsMessageDeleted(long Id)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "SELECT COUNT(*) FROM chat.DELETED WHERE MessageId = @Id";
 
@@ -102,7 +102,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public void DeleteMessage(DeleteMessageRequest request)
         {
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             var query = "INSERT INTO chat.DELETED (MessageId, DateDeleted) VALUES (@MessageId, @DateDeleted)";
 
@@ -113,7 +113,7 @@ namespace ChatServer.Repositories.PostgreSQL
         {
             var query = "SELECT SourceId FROM chat.MESSAGES WHERE Id=@MessageId";
 
-            var conn = GetConnection();
+            using var conn = GetConnection();
 
             return conn.QuerySingleOrDefault<string>(query, new { MessageId });
         }
