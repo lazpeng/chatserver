@@ -160,16 +160,12 @@ namespace ChatServer.Repositories.PostgreSQL
             return result;
         }
 
-        public bool AreUsersFriends(string IdA, string IdB)
+        public bool AreUsersFriends(string A, string B)
         {
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
 
             using var conn = GetConnection();
-            using var cmd = GetCommand(query, conn);
-            cmd.Parameters.Add(GetParameter("@A", IdA));
-            cmd.Parameters.Add(GetParameter("@B", IdB));
-
-            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+            return conn.QuerySingle<long>(query, new { A, B }) > 0;
         }
 
         public void RemoveFriend(string SourceId, string TargetId)
