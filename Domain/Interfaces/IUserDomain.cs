@@ -20,5 +20,7 @@ namespace ChatServer.Domain.Interfaces
         Task DeleteAccount(string UserId);
         Task UpdateLastLogin(string UserId);
         Task UpdateLastSeen(string UserId);
+        Task Edit(string TargetId, UserModel Request);
+        Task UpdateUserPassword(string UserId, string Password);
     }
 }

@@ -5,16 +5,20 @@ using ChatServer.Exceptions;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using System.Security.Cryptography;
+using ChatServer.Helpers;
 
 namespace ChatServer.Domain
 {
     public class UserDomain : IUserDomain
     {
         private readonly IUserRepository _userRepository;
+        private readonly IAuthRepository _authRepository;
 
-        public UserDomain(IUserRepository userRepository)
+        public UserDomain(IUserRepository userRepository, IAuthRepository authRepository)
         {
             _userRepository = userRepository;
+            _authRepository = authRepository;
         }
 
         public async Task SendFriendRequest(string SourceId, string TargetId)
@@ -113,6 +117,40 @@ namespace ChatServer.Domain
         public async Task UpdateLastSeen(string UserId)
         {
             await _userRepository.UpdateLastSeen(UserId);
+        }
+
+        private string GenerateSalt()
+        {
+            var rng = new RNGCryptoServiceProvider();
+            var buffer = new byte[32];
+            rng.GetBytes(buffer);
+
+            return Convert.ToBase64String(buffer);
+        }
+
+        public async Task UpdateUserPassword(string UserId, string Password)
+        {
+            var newSalt = GenerateSalt();
+            var newHash = HashHelper.CalculateHash(Password, newSalt);
+
+            await _authRepository.SavePasswordHash(UserId, newHash, newSalt);
+        }
+
+        public async Task Edit(string Id, UserModel User)
+        {
+            User.Id = Id;
+
+            await _userRepository.Edit(User);
+
+            if(! string.IsNullOrEmpty(User.Password))
+            {
+                if(User.Password.Length < 6)
+                {
+                    throw new ChatBaseException("Password length must be >= 6 characters");
+                }
+
+                await UpdateUserPassword(Id, User.Password);
+            }
         }
     }
 }

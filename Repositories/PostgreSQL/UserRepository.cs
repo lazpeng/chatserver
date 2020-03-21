@@ -60,12 +60,13 @@ namespace ChatServer.Repositories.PostgreSQL
 
             try
             {
-                conn.Execute("INSERT INTO chat.USERS(Id, UserName, FullName, Email, Bio, AccountCreated," +
+                await conn.ExecuteAsync("INSERT INTO chat.USERS(Id, UserName, FullName, Email, Bio, AccountCreated," +
                     " LastLogin, LastSeen, DateOfBirth, FindInSearch, OpenChat, PasswordHash, PasswordSalt) VALUES (" +
                     " @Id, @Username, @FullName, @Email, @Bio, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @DateOfBirth," +
                     " @FindInSearch, @OpenChat, '', '')", user);
 
-                await new AuthDomain(new AuthRepository(ConnectionString), new UserDomain(this)).UpdateUserPassword(user.Id, user.Password);
+                var authRepository = new AuthRepository(ConnectionString);
+                await new UserDomain(this, authRepository).UpdateUserPassword(user.Id, user.Password);
 
                 return await Get(user.Id);
             }
@@ -168,6 +169,18 @@ namespace ChatServer.Repositories.PostgreSQL
             using var conn = await GetConnection();
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A = @Id AND B = @Target AND SettleDate IS NULL";
             return await conn.QuerySingleAsync<long>(query, new { Id = SourceId, Target = TargetId }) > 0;
+        }
+
+        public async Task Edit(UserModel User)
+        {
+            using var conn = await GetConnection();
+
+            var query = "UPDATE chat.USERS SET" +
+                        " UserName = @Username, FullName = @FullName, Email = @Email, Bio = @Bio, DateOfBirth = @DateOfBirth" +
+                        " FindInSearch = @FindInSearch, OpenChat = @OpenChat" +
+                        " WHERE Id = @Id";
+
+            await conn.ExecuteAsync(query, User);
         }
     }
 }

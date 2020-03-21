@@ -85,7 +85,34 @@ namespace ChatServer.Controllers
             }
         }
 
-        [HttpPost("register")]
+        [HttpPut("{Id}")]
+        public async Task<IActionResult> Edit(string Id, [FromBody] EditUserRequest User)
+        {
+            try
+            {
+                if(!await _authDomain.IsTokenValid(Id, User.Token))
+                {
+                    return Unauthorized();
+                }
+
+                await _userDomain.Edit(Id, User);
+
+                return Ok();
+            } catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Register([FromBody] UserModel user)
         {
             try

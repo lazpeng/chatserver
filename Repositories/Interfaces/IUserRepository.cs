@@ -22,5 +22,6 @@ namespace ChatServer.Repositories.Interfaces
         Task UpdateLastLogin(string UserId);
         Task UpdateLastSeen(string UserId);
         Task<bool> IsUserBlocked(string SourceId, string BlockedId);
+        Task Edit(UserModel User);
     }
 }

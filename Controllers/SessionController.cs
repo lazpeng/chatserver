@@ -22,6 +22,7 @@ namespace ChatServer.Controllers
             _authDomain = authDomain;
         }
 
+        [HttpPost("check")]
         public async Task<IActionResult> Check([FromBody] CheckRequest Request)
         {
             try

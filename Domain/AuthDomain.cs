@@ -1,10 +1,9 @@
 ﻿using ChatServer.Domain.Interfaces;
 using ChatServer.Models.Responses;
 using ChatServer.Repositories.Interfaces;
+using ChatServer.Helpers;
 using System;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ChatServer.Domain
@@ -19,32 +18,6 @@ namespace ChatServer.Domain
         {
             _authRepository = authRepository;
             _userDomain = userDomain;
-        }
-
-        private string GenerateSalt()
-        {
-            var rng = new RNGCryptoServiceProvider();
-            var buffer = new byte[32];
-            rng.GetBytes(buffer);
-
-            return Convert.ToBase64String(buffer);
-        }
-
-        private string CalculateHash(string password, string salt)
-        {
-            using var algo = new SHA256Managed();
-
-            var finalBytes = Encoding.UTF8.GetBytes(password + salt);
-
-            return Convert.ToBase64String(algo.ComputeHash(finalBytes));
-        }
-
-        public async Task UpdateUserPassword(string UserId, string Password)
-        {
-            var newSalt = GenerateSalt();
-            var newHash = CalculateHash(Password, newSalt);
-
-            await _authRepository.SavePasswordHash(UserId, newHash, newSalt);
         }
 
         public async Task<bool> IsTokenValid(string UserId, string Token)
@@ -63,7 +36,7 @@ namespace ChatServer.Domain
 
                 var hashAndSalt = await _authRepository.GetPasswordHashAndSalt(user.Id);
 
-                var calculated = CalculateHash(Password, hashAndSalt.Item2);
+                var calculated = HashHelper.CalculateHash(Password, hashAndSalt.Item2);
 
                 if (calculated == hashAndSalt.Item1)
                 {
