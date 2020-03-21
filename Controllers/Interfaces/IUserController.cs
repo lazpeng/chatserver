@@ -1,25 +1,22 @@
 ﻿using ChatServer.Models;
 using ChatServer.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ChatServer.Controllers.Interfaces
 {
     public interface IUserController
     {
-        IActionResult Search(string Username);
-        IActionResult Get(string Id, [FromBody] GetUserRequest request);
-        IActionResult Register([FromBody] UserModel user);
-        IActionResult AddFriend(string SourceId, string TargetId, [FromBody] string SessionToken);
-        IActionResult RejectFriendRequest(string SourceId, string TargetId, [FromBody] string SessionToken);
-        IActionResult RemoveFriend(string SourceId, string TargetId, [FromBody] string SessionToken);
-        IActionResult BlockUser(string SourceId, string TargetId, [FromBody] string SessionToken);
-        IActionResult UnblockUser(string SourceId, string TargetId, [FromBody] string SessionToken);
-        IActionResult FriendList(string SourceId, [FromBody] string SessionToken);
-        IActionResult BlockList(string SourceId, [FromBody] string SessionToken);
-        IActionResult DeleteAccount(string SourceId, [FromBody] string SessionToken);
+        Task<IActionResult> Search(string Username);
+        Task<IActionResult> Get(string Id, [FromBody] GetUserRequest request);
+        Task<IActionResult> Register([FromBody] UserModel user);
+        Task<IActionResult> AddFriend(string SourceId, string TargetId, [FromBody] string SessionToken);
+        Task<IActionResult> RejectFriendRequest(string SourceId, string TargetId, [FromBody] string SessionToken);
+        Task<IActionResult> RemoveFriend(string SourceId, string TargetId, [FromBody] string SessionToken);
+        Task<IActionResult> BlockUser(string SourceId, string TargetId, [FromBody] string SessionToken);
+        Task<IActionResult> UnblockUser(string SourceId, string TargetId, [FromBody] string SessionToken);
+        Task<IActionResult> FriendList(string SourceId, [FromBody] string SessionToken);
+        Task<IActionResult> BlockList(string SourceId, [FromBody] string SessionToken);
+        Task<IActionResult> DeleteAccount(string SourceId, [FromBody] string SessionToken);
     }
 }

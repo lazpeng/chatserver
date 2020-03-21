@@ -6,8 +6,8 @@ using Dapper;
 using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ChatServer.Repositories.PostgreSQL
 {
@@ -15,9 +15,9 @@ namespace ChatServer.Repositories.PostgreSQL
     {
         public UserRepository(string ConnectionString) : base(ConnectionString) { }
 
-        public List<UserModel> Find(string username, bool includePartial = true)
+        public async Task<List<UserModel>> Find(string username, bool includePartial = true)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
             var fuzzyUsername = $"%{username}%";
 
@@ -28,34 +28,33 @@ namespace ChatServer.Repositories.PostgreSQL
                 query += " OR (UserName like @Fuzzy AND FindInSearch=TRUE)";
             }
 
-            return conn.Query<UserModel>(query, new { UserName = username, Fuzzy = fuzzyUsername }).ToList();
+            return (await conn.QueryAsync<UserModel>(query, new { UserName = username, Fuzzy = fuzzyUsername })).ToList();
         }
 
-        public UserModel Get(string Id)
+        public async Task<UserModel> Get(string Id)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            var result = conn.Query<UserModel>("SELECT * FROM chat.USERS WHERE ID=@Id", new { Id });
-            return result.Count() == 0 ? null : result.First();
+            return await conn.QuerySingleAsync<UserModel>("SELECT * FROM chat.USERS WHERE ID=@Id", new { Id });
         }
 
-        public void UpdateLastLogin(string UserId)
+        public async Task UpdateLastLogin(string UserId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
+            await conn.ExecuteAsync("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
-        public void UpdateLastSeen(string UserId)
+        public async Task UpdateLastSeen(string UserId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
+            await conn.ExecuteAsync("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
-        public UserModel Register(UserModel user)
+        public async Task<UserModel> Register(UserModel user)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
             user.Id = Guid.NewGuid().ToString();
 
@@ -66,9 +65,9 @@ namespace ChatServer.Repositories.PostgreSQL
                     " @Id, @Username, @FullName, @Email, @Bio, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @DateOfBirth," +
                     " @FindInSearch, @OpenChat, '', '')", user);
 
-                new AuthDomain(new AuthRepository(ConnectionString), this).UpdateUserPassword(user.Id, user.Password);
+                await new AuthDomain(new AuthRepository(ConnectionString), new UserDomain(this)).UpdateUserPassword(user.Id, user.Password);
 
-                return Get(user.Id);
+                return await Get(user.Id);
             }
             catch (PostgresException ex)
             {
@@ -89,123 +88,86 @@ namespace ChatServer.Repositories.PostgreSQL
             }
         }
 
-        public void SendFriendRequest(string SourceId, string TargetId)
+        public async Task SendFriendRequest(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
             var query = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, CURRENT_TIMESTAMP)";
-            using var cmd = GetCommand(query, conn);
-
-            cmd.Parameters.Add(GetParameter("@Id", SourceId));
-            cmd.Parameters.Add(GetParameter("@Target", TargetId));
-
-            cmd.ExecuteNonQuery();
+            await conn.ExecuteAsync(query, new { Id = SourceId, Target = TargetId });
         }
 
-        public void AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
+        public async Task AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
         {
+            using var conn = await GetConnection();
             var query = "UPDATE chat.FRIENDS SET SettleDate = CURRENT_TIMESTAMP, Accepted = @Accepted WHERE A = @Id AND B = @Target";
-            GetConnection().Execute(query, new { Accepted = Accepted ? 1 : 0, A = SourceId, B = TargetId });
+            await conn.ExecuteAsync(query, new { Accepted = Accepted ? 1 : 0, A = SourceId, B = TargetId });
         }
 
-        public List<FriendModel> FriendList(string UserId)
+        public async Task<List<FriendModel>> FriendList(string UserId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
             var query = @"SELECT A as SourceId, B as TargetId, SettleDate as FriendsSince, SentDate as RequestSent 
                           FROM chat.FRIENDS WHERE (A = @Id OR B = @Id) AND (SettleDate IS NULL OR Accepted = TRUE)";
 
-            return conn.Query<FriendModel>(query, new { Id = UserId }).ToList();
+            return (await conn.QueryAsync<FriendModel>(query, new { Id = UserId })).ToList();
         }
 
-        public bool IsUserBlocked(string SourceId, string BlockedId)
+        public async Task<bool> IsUserBlocked(string SourceId, string BlockedId)
         {
-            using var conn = GetConnection();
-            using var cmd = GetCommand("SELECT COUNT(*) FROM chat.BLOCKLIST WHERE UserId=@UserId AND Blocked=@BlockedId", conn);
-            cmd.Parameters.Add(GetParameter("@UserId", SourceId));
-            cmd.Parameters.Add(GetParameter("@BlockedId", BlockedId));
-
-            return Convert.ToInt32(cmd.ExecuteScalar()) != 0;
+            using var conn = await GetConnection();
+            return await conn.QuerySingleAsync<long>("SELECT COUNT(*) FROM chat.BLOCKLIST WHERE UserId=@UserId AND Blocked=@BlockedId") > 0;
         }
 
-        public void BlockUser(string SourceId, string BlockedId)
+        public async Task BlockUser(string SourceId, string BlockedId)
         {
-            using var conn = GetConnection();
-            using var cmd = GetCommand("INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP)", conn);
-
-            cmd.ExecuteNonQuery();
+            using var conn = await GetConnection();
+            var query = "INSERT INTO chat.BLOCKLIST (UserId, Blocked, BlockDate) VALUES (@UserId, @BlockedId, CURRENT_TIMESTAMP)";
+            await conn.ExecuteAsync(query, new { UserId = SourceId, BlockedId });
         }
 
-        public void UnblockUser(string SourceId, string BlockedId)
+        public async Task UnblockUser(string SourceId, string BlockedId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("DELETE FROM chat.BLOCKLIST WHERE UserId=@SourceId AND Blocked=@BlockedId", new { SourceId, BlockedId });
+            await conn.ExecuteAsync("DELETE FROM chat.BLOCKLIST WHERE UserId=@SourceId AND Blocked=@BlockedId", new { SourceId, BlockedId });
         }
 
-        public List<string> BlockList(string UserId)
+        public async Task<List<string>> BlockList(string UserId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
             var query = "SELECT Blocked FROM chat.BLOCKLIST WHERE UserId=@UserId";
-            using var cmd = GetCommand(query, conn);
-            cmd.Parameters.Add(GetParameter("@UserId", UserId));
-
-            var result = new List<string>();
-            var reader = cmd.ExecuteReader();
-
-            while (reader.Read())
-            {
-                result.Add(reader.GetString(0));
-            }
-
-            return result;
+            return (await conn.QueryAsync<string>(query, new { UserId })).ToList();
         }
 
-        public bool AreUsersFriends(string A, string B)
+        public async Task<bool> AreUsersFriends(string A, string B)
         {
+            using var conn = await GetConnection();
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE (A = @A AND B=@B) OR (A = @B AND B = @A)";
 
-            using var conn = GetConnection();
-            return conn.QuerySingle<long>(query, new { A, B }) > 0;
+            return await conn.QuerySingleAsync<long>(query, new { A, B }) > 0;
         }
 
-        public void RemoveFriend(string SourceId, string TargetId)
+        public async Task RemoveFriend(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
             var query = "DELETE FROM chat.FRIENDS WHERE (A=@SourceId AND B=@TargetId) OR (A = @TargetId AND B=@SourceId)";
-            conn.Execute(query, new { SourceId, TargetId });
+            await conn.ExecuteAsync(query, new { SourceId, TargetId });
         }
 
-        public void DeleteAccount(string Id)
+        public async Task DeleteAccount(string Id)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
             var query = "DELETE FROM chat.USERS WHERE Id=@Id";
-            conn.Execute(query, new { Id });
+            await conn.ExecuteAsync(query, new { Id });
         }
 
-        public bool HasFriendRequestSentToTarget(string SourceId, string TargetId)
+        public async Task<bool> HasFriendRequestSentToTarget(string SourceId, string TargetId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A = @Id AND B = @Target AND SettleDate IS NULL";
-            using var cmd = GetCommand(query, conn);
-
-            cmd.Parameters.Add(GetParameter("@Id", SourceId));
-            cmd.Parameters.Add(GetParameter("@Target", TargetId));
-
-            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
-        }
-
-        public bool HasFriendRequestFromTarget(string SourceId, string TargetId)
-        {
-            using var conn = GetConnection();
-            var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A=@Target AND B=@Id AND SettleDate IS NULL";
-            using var cmd = GetCommand(query, conn);
-
-            cmd.Parameters.Add(GetParameter("@Id", SourceId));
-            cmd.Parameters.Add(GetParameter("@Target", TargetId));
-
-            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+            return await conn.QuerySingleAsync<long>(query, new { Id = SourceId, Target = TargetId }) > 0;
         }
     }
 }

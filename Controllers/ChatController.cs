@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using ChatServer.Controllers.Interfaces;
-using ChatServer.Domain;
 using ChatServer.Domain.Interfaces;
 using ChatServer.Exceptions;
 using ChatServer.Models.Requests;
@@ -28,11 +25,11 @@ namespace ChatServer.Controllers
         }
 
         [HttpPut("send")]
-        public IActionResult SendMessage([FromBody] SendMessageRequest request)
+        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(request.SourceId, request.Token))
+                if (! await _authDomain.IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
@@ -47,16 +44,20 @@ namespace ChatServer.Controllers
                 {
                     return Unauthorized(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpGet("check")]
-        public IActionResult CheckNewMessages([FromBody] CheckNewRequest request)
+        public async Task<IActionResult> CheckNewMessages([FromBody] CheckNewRequest request)
         {
             try
             {
-                if(!_authDomain.IsTokenValid(request.SourceId, request.Token))
+                if(! await _authDomain.IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
@@ -68,21 +69,25 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPost("seen")]
-        public IActionResult UpdateSeen([FromBody] UpdateSeenRequest request)
+        public async Task<IActionResult> UpdateSeen([FromBody] UpdateSeenRequest request)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(request.SourceId, request.Token))
+                if (! await _authDomain.IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
 
-                _chatDomain.UpdateSeen(request);
+                await _chatDomain.UpdateSeen(request);
                 return Ok();
             }
             catch (Exception e)
@@ -91,7 +96,11 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
     }

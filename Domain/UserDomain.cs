@@ -1,106 +1,118 @@
 ﻿using ChatServer.Domain.Interfaces;
 using ChatServer.Models;
 using ChatServer.Repositories.Interfaces;
-using System;
+using ChatServer.Exceptions;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace ChatServer.Domain
 {
     public class UserDomain : IUserDomain
     {
-        private readonly IUserRepository userRepository;
+        private readonly IUserRepository _userRepository;
 
         public UserDomain(IUserRepository userRepository)
         {
-            this.userRepository = userRepository;
+            _userRepository = userRepository;
         }
 
-        public void SendFriendRequest(string SourceId, string TargetId)
+        public async Task SendFriendRequest(string SourceId, string TargetId)
         {
-            if(userRepository.AreUsersFriends(SourceId, TargetId) || userRepository.HasFriendRequestSentToTarget(SourceId, TargetId))
+            if(await _userRepository.IsUserBlocked(TargetId, SourceId))
             {
-                return;
-            } else if(userRepository.HasFriendRequestFromTarget(SourceId, TargetId))
+                throw new ChatBaseException("Cannot send friend request");
+            } else if(await _userRepository.HasFriendRequestSentToTarget(TargetId, SourceId))
             {
-                userRepository.AnswerFriendRequest(SourceId, TargetId, true);
-            } else
+                await _userRepository.AnswerFriendRequest(TargetId, SourceId, true);
+            } else if(! await _userRepository.AreUsersFriends(SourceId, TargetId) && ! await _userRepository.HasFriendRequestSentToTarget(SourceId, TargetId))
             {
-                userRepository.SendFriendRequest(SourceId, TargetId);
+                await _userRepository.SendFriendRequest(SourceId, TargetId);
             }
         }
 
-        public void RemoveFriend(string SourceId, string TargetId)
+        public async Task RemoveFriend(string SourceId, string TargetId)
         {
-            userRepository.RemoveFriend(SourceId, TargetId);
+            await _userRepository.RemoveFriend(SourceId, TargetId);
         }
 
-        public void BlockUser(string SourceId, string TargetId)
+        public async Task BlockUser(string SourceId, string TargetId)
         {
-            if(!userRepository.IsUserBlocked(SourceId, TargetId))
+            if(! await _userRepository.IsUserBlocked(SourceId, TargetId))
             {
-                userRepository.BlockUser(SourceId, TargetId);
+                await _userRepository.BlockUser(SourceId, TargetId);
             }
         }
 
-        public void RemoveBlock(string SourceId, string TargetId)
+        public async Task RemoveBlock(string SourceId, string TargetId)
         {
-            userRepository.UnblockUser(SourceId, TargetId);
+            await _userRepository.UnblockUser(SourceId, TargetId);
         }
 
-        public bool CanSendMessage(string FromUser, string ToUser)
+        public async Task<bool> CanSendMessage(string FromUser, string ToUser)
         {
-            var target = userRepository.Get(ToUser);
+            var target = await _userRepository.Get(ToUser);
 
             if(target != null)
             {
-                return target.OpenChat || userRepository.AreUsersFriends(FromUser, ToUser);
+                return target.OpenChat || await _userRepository.AreUsersFriends(FromUser, ToUser);
             }
 
             return false;
         }
 
-        public List<FriendModel> FriendList(string UserId)
+        public async Task<List<FriendModel>> FriendList(string UserId)
         {
-            return userRepository.FriendList(UserId);
+            return await _userRepository.FriendList(UserId);
         }
 
-        public List<string> BlockList(string UserId)
+        public async Task<List<string>> BlockList(string UserId)
         {
-            return userRepository.BlockList(UserId);
+            return await _userRepository.BlockList(UserId);
         }
 
-        public void AnswerFriendRequest(string UserId, string SourceId, bool Answer)
+        public async Task AnswerFriendRequest(string UserId, string SourceId, bool Answer)
         {
-            userRepository.AnswerFriendRequest(UserId, SourceId, Answer);
+            await _userRepository.AnswerFriendRequest(UserId, SourceId, Answer);
         }
 
-        public UserModel Register(UserModel user)
+        public async Task<UserModel> Register(UserModel user)
         {
-            return userRepository.Register(user);
+            return await _userRepository.Register(user);
         }
 
-        public UserModel Get(string FromId, string Id)
+        public async Task<UserModel> Get(string FromId, string Id)
         {
-            var user = userRepository.Get(Id);
+            var user = await _userRepository.Get(Id);
 
-            if(!userRepository.AreUsersFriends(Id, FromId))
+            if(!await _userRepository.AreUsersFriends(Id, FromId))
             {
-                // TODO: Strip user of personal information
+                user.DateOfBirth = DateTime.MinValue;
+                user.FullName = user.Email = null;
+                user.LastLogin = user.LastSeen = user.AccountCreated = null;
             }
 
             return user;
         }
 
-        public List<UserModel> Search(string Username)
+        public async Task<List<UserModel>> Search(string Username, bool Partial = true)
         {
-            return userRepository.Find(Username, true);
+            return await _userRepository.Find(Username, Partial);
         }
 
-        public void DeleteAccount(string UserId)
+        public async Task DeleteAccount(string UserId)
         {
-            userRepository.DeleteAccount(UserId);
+            await _userRepository.DeleteAccount(UserId);
+        }
+
+        public async Task UpdateLastLogin(string UserId)
+        {
+            await _userRepository.UpdateLastLogin(UserId);
+        }
+
+        public async Task UpdateLastSeen(string UserId)
+        {
+            await _userRepository.UpdateLastSeen(UserId);
         }
     }
 }

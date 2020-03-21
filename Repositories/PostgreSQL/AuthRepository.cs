@@ -1,9 +1,9 @@
 ﻿using ChatServer.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using System.Linq;
 
 namespace ChatServer.Repositories.PostgreSQL
 {
@@ -11,66 +11,55 @@ namespace ChatServer.Repositories.PostgreSQL
     {
         public AuthRepository(string ConnectionString) : base(ConnectionString) { }
 
-        public Tuple<string, string> GetPasswordHashAndSalt(string UserId)
+        public async Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId)
         {
-            using var conn = GetConnection();
-            using var cmd = GetCommand("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId", conn);
-            cmd.Parameters.Add(GetParameter("UserId", UserId));
-
-            var reader = cmd.ExecuteReader();
-            if(reader.Read())
-            {
-                return new Tuple<string, string>(reader.GetString(0), reader.GetString(1));
-            }
-
-            return null;
+            using var conn = await GetConnection();
+            var result = await conn.QuerySingleAsync("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId", new { UserId });
+            return new Tuple<string, string>(result["PasswordHash"], result["PasswordSalt"]);
         }
 
-        public List<string> GetValidTokensForUser(string Id)
+        public async Task<List<string>> GetValidTokensForUser(string Id)
         {
-            using var conn = GetConnection();
-            using var cmd = GetCommand("SELECT Token FROM chat.SESSIONS WHERE UserId = @Id AND ExpirationDate > CURRENT_TIMESTAMP", conn);
-            cmd.Parameters.Add(GetParameter("Id", Id));
-
-            var result = new List<string>();
-
-            var reader = cmd.ExecuteReader();
-            while(reader.Read())
-            {
-                result.Add(reader.GetString(0));
-            }
-
-            return result;
+            using var conn = await GetConnection();
+            return (await conn.QueryAsync<string>("SELECT Token FROM chat.SESSIONS WHERE UserId = @Id AND ExpirationDate > CURRENT_TIMESTAMP", new { Id })).ToList();
         }
 
-        public void SaveLogin(string UserId)
+        public async Task SaveLogin(string UserId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
+            await conn.ExecuteAsync("UPDATE chat.USERS SET LastLogin = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
-        public void SaveLastSeen(string UserId)
+        public async Task SaveLastSeen(string UserId)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
+            await conn.ExecuteAsync("UPDATE chat.USERS SET LastSeen = CURRENT_TIMESTAMP WHERE Id=@UserId", new { UserId });
         }
 
-        public void SaveNewToken(string UserId, string Token, TimeSpan Validity)
+        public async Task SaveNewToken(string UserId, string Token, TimeSpan Validity)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("INSERT INTO chat.SESSIONS (UserId, Token, CreatedOn, ExpirationDate) VALUES" +
+            await conn.ExecuteAsync("INSERT INTO chat.SESSIONS (UserId, Token, CreatedOn, ExpirationDate) VALUES" +
                 " (@UserId, @Token, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '1' HOUR * @ExpirationHours)",
                 new { UserId, Token, ExpirationHours = Validity.TotalHours });
         }
 
-        public void SavePasswordHash(string UserId, string NewHash, string Salt)
+        public async Task SavePasswordHash(string UserId, string NewHash, string Salt)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("UPDATE chat.USERS SET PasswordHash=@NewHash, PasswordSalt=@Salt WHERE Id=@UserId", new { UserId, NewHash, Salt });
+            await conn.ExecuteAsync("UPDATE chat.USERS SET PasswordHash=@NewHash, PasswordSalt=@Salt WHERE Id=@UserId", new { UserId, NewHash, Salt });
+        }
+
+        public async Task DeleteExpiredSessions()
+        {
+            using var conn = await GetConnection();
+            var query = "DELETE FROM chat.SESSIONS WHERE ExpirationDate < CURRENT_TIMESTAMP";
+
+            await conn.ExecuteAsync(query);
         }
     }
 }

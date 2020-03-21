@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ChatServer.Models;
 using ChatServer.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ChatServer.Controllers.Interfaces;
 using ChatServer.Domain.Interfaces;
 using ChatServer.Models.Requests;
+using System.Threading.Tasks;
 
 namespace ChatServer.Controllers
 {
@@ -32,16 +30,11 @@ namespace ChatServer.Controllers
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
         [HttpGet("search/{username}")]
-        public IActionResult Search(string username)
+        public async Task<IActionResult> Search(string username)
         {
             try
             {
-                var user = _userDomain.Search(username);
-                if (user != null)
-                {
-                    return Ok(user);
-                }
-                else return NotFound();
+                return Ok(await _userDomain.Search(username));
             }
             catch (Exception e)
             {
@@ -49,7 +42,11 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
@@ -57,17 +54,17 @@ namespace ChatServer.Controllers
         /// Gets an user based on its id.
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
-        [HttpPost("get/{id}")]
-        public IActionResult Get(string id, [FromBody] GetUserRequest request)
+        [HttpPost("{id}")]
+        public async Task<IActionResult> Get(string id, [FromBody] GetUserRequest request)
         {
             try
             {
-                if(!_authDomain.IsTokenValid(request.SourceId, request.Token))
+                if(!await _authDomain.IsTokenValid(request.SourceId, request.Token))
                 {
                     return Unauthorized();
                 }
 
-                var user = _userDomain.Get(request.SourceId, id);
+                var user = await _userDomain.Get(request.SourceId, id);
                 if (user != null)
                 {
                     return Ok(user);
@@ -80,37 +77,45 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPost("register")]
-        public IActionResult Register([FromBody] UserModel user)
+        public async Task<IActionResult> Register([FromBody] UserModel user)
         {
             try
             {
-                return Ok(_userDomain.Register(user));
+                return Ok(await _userDomain.Register(user));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPut("{SourceId}/friend/add/{TargetId}")]
-        public IActionResult AddFriend(string SourceId, string TargetId, [FromBody] string Token)
+        public async Task<IActionResult> AddFriend(string SourceId, string TargetId, [FromBody] string Token)
         {
             try
             {
-                if(!_authDomain.IsTokenValid(SourceId, Token))
+                if(!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userDomain.SendFriendRequest(SourceId, TargetId);
+                await _userDomain.SendFriendRequest(SourceId, TargetId);
                 return Ok();
             } catch (Exception e)
             {
@@ -118,21 +123,25 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPut("{SourceId}/friend/reject/{TargetId}")]
-        public IActionResult RejectFriendRequest(string SourceId, string TargetId, [FromBody] string Token)
+        public async Task<IActionResult> RejectFriendRequest(string SourceId, string TargetId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(SourceId, Token))
+                if (!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userDomain.AnswerFriendRequest(SourceId, TargetId, false);
+                await _userDomain.AnswerFriendRequest(SourceId, TargetId, false);
                 return Ok();
             }
             catch (Exception e)
@@ -141,21 +150,25 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPut("{SourceId}/friend/remove/{TargetId}")]
-        public IActionResult RemoveFriend(string SourceId, string TargetId, [FromBody] string Token)
+        public async Task<IActionResult> RemoveFriend(string SourceId, string TargetId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(SourceId, Token))
+                if (!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userDomain.RemoveFriend(SourceId, TargetId);
+                await _userDomain.RemoveFriend(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -164,21 +177,25 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPut("{SourceId}/block/add/{TargetId}")]
-        public IActionResult BlockUser(string SourceId, string TargetId, [FromBody] string Token)
+        public async Task<IActionResult> BlockUser(string SourceId, string TargetId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(SourceId, Token))
+                if (!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userDomain.BlockUser(SourceId, TargetId);
+                await _userDomain.BlockUser(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -187,21 +204,25 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpPut("{SourceId}/block/remove/{TargetId}")]
-        public IActionResult UnblockUser(string SourceId, string TargetId, [FromBody] string Token)
+        public async Task<IActionResult> UnblockUser(string SourceId, string TargetId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(SourceId, Token))
+                if (!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userDomain.RemoveBlock(SourceId, TargetId);
+                await _userDomain.RemoveBlock(SourceId, TargetId);
                 return Ok();
             }
             catch (Exception e)
@@ -210,16 +231,20 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpGet("{SourceId}/friendlist")]
-        public IActionResult FriendList(string SourceId, [FromBody] string Token)
+        public async Task<IActionResult> FriendList(string SourceId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(SourceId, Token))
+                if (!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
@@ -232,16 +257,20 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
         [HttpGet("{SourceId}/blocklist")]
-        public IActionResult BlockList(string SourceId, [FromBody] string Token)
+        public async Task<IActionResult> BlockList(string SourceId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(SourceId, Token))
+                if (!await _authDomain.IsTokenValid(SourceId, Token))
                 {
                     return Unauthorized();
                 }
@@ -254,21 +283,25 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
 
-        [HttpDelete("delete/{FromId}")]
-        public IActionResult DeleteAccount(string FromId, [FromBody] string Token)
+        [HttpDelete("{FromId}")]
+        public async Task<IActionResult> DeleteAccount(string FromId, [FromBody] string Token)
         {
             try
             {
-                if (!_authDomain.IsTokenValid(FromId, Token))
+                if (!await _authDomain.IsTokenValid(FromId, Token))
                 {
                     return Unauthorized();
                 }
 
-                _userDomain.DeleteAccount(FromId);
+                await _userDomain.DeleteAccount(FromId);
                 return Ok();
             }
             catch (Exception e)
@@ -277,7 +310,11 @@ namespace ChatServer.Controllers
                 {
                     return BadRequest(e.Message);
                 }
-                else return StatusCode(500, e.Message);
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
             }
         }
     }

@@ -1,23 +1,20 @@
 ﻿using ChatServer.Models;
 using ChatServer.Models.Requests;
 using ChatServer.Models.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ChatServer.Domain.Interfaces
 {
     public interface IChatDomain
     {
-        MessageModel SendMessage(SendMessageRequest request);
+        Task<MessageModel> SendMessage(SendMessageRequest request);
 
-        void EditMessage(EditMessageRequest request);
+        Task EditMessage(EditMessageRequest request);
 
-        void DeleteMessage(DeleteMessageRequest request);
+        Task DeleteMessage(DeleteMessageRequest request);
 
-        void UpdateSeen(UpdateSeenRequest request);
+        Task UpdateSeen(UpdateSeenRequest request);
 
-        CheckNewResponse CheckNewMessages(CheckNewRequest request);
+        Task<CheckNewResponse> CheckNewMessages(CheckNewRequest request);
     }
 }

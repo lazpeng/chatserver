@@ -18,9 +18,8 @@ namespace ChatServer.Models
         public string Bio { get; set; }
         public DateTime? LastSeen { get; set; }
         public DateTime? LastLogin { get; set; }
-        public DateTime AccountCreated { get; set; }
+        public DateTime? AccountCreated { get; set; }
         public DateTime DateOfBirth { get; set; }
-        public string ProfilePicUrl { get; set; }
         public bool FindInSearch { get; set; } = true;
         public bool OpenChat { get; set; } = true;
         [MinLength(6, ErrorMessage = "Password must have at least 6 characters")]

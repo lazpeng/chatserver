@@ -4,66 +4,65 @@ using ChatServer.Models;
 using ChatServer.Models.Requests;
 using ChatServer.Models.Responses;
 using ChatServer.Repositories.Interfaces;
+using System.Threading.Tasks;
 
 namespace ChatServer.Domain
 {
     public class ChatDomain : IChatDomain
     {
         private readonly IChatRepository _chatRepository;
-        private readonly IUserRepository _userRepository;
+        private readonly IUserDomain _userDomain;
 
-        public ChatDomain(IChatRepository chatRepository, IUserRepository userRepository)
+        public ChatDomain(IChatRepository chatRepository, IUserDomain userDomain)
         {
             _chatRepository = chatRepository;
-            _userRepository = userRepository;
+            _userDomain = userDomain;
         }
 
-        public MessageModel SendMessage(SendMessageRequest request)
+        public async Task<MessageModel> SendMessage(SendMessageRequest request)
         {
-            var userDomain = new UserDomain(_userRepository);
-
-            if(!userDomain.CanSendMessage(request.SourceId, request.TargetId))
+            if(!await _userDomain.CanSendMessage(request.SourceId, request.TargetId))
             {
                 throw new ChatPermissionException("Cannot send message to user");
             }
 
-            return _chatRepository.SendMessage(request);
+            return await _chatRepository.SendMessage(request);
         }
 
-        public void EditMessage(EditMessageRequest request)
+        public async Task EditMessage(EditMessageRequest request)
         {
-            if (_chatRepository.GetSentUserId(request.MessageId) != request.UserId)
+            if (await _chatRepository.GetSentUserId(request.MessageId) != request.UserId)
             {
                 throw new ChatPermissionException("Not sent by this user");
             }
-            _chatRepository.EditMessage(request);
+            await _chatRepository.EditMessage(request);
         }
 
-        public void DeleteMessage(DeleteMessageRequest request)
+        public async Task DeleteMessage(DeleteMessageRequest request)
         {
-            if(_chatRepository.GetSentUserId(request.MessageId) != request.UserId)
+            if(await _chatRepository.GetSentUserId(request.MessageId) != request.UserId)
             {
                 throw new ChatPermissionException("Not sent by this user");
             }
 
-            if(!_chatRepository.IsMessageDeleted(request.MessageId))
+            if(! await _chatRepository.IsMessageDeleted(request.MessageId))
             {
-                _chatRepository.DeleteMessage(request);
+                await _chatRepository.DeleteMessage(request);
             }
         }
 
-        public void UpdateSeen(UpdateSeenRequest request)
+        public async Task UpdateSeen(UpdateSeenRequest request)
         {
-            _chatRepository.UpdateSeenMessage(request);
+            await _chatRepository.UpdateSeenMessage(request);
         }
 
-        public CheckNewResponse CheckNewMessages(CheckNewRequest request)
+        public async Task<CheckNewResponse> CheckNewMessages(CheckNewRequest request)
         {
             return new CheckNewResponse
             {
-                NewMessages = _chatRepository.GetSentMessages(request.SourceId, request.LastReceivedId),
-                EditedMessages = _chatRepository.GetEditedMessages(request.SourceId, request.LastEditedId),
-                DeletedMessages = _chatRepository.GetDeletedMessages(request.SourceId, request.LastDeletedId)
+                NewMessages = await _chatRepository.GetSentMessages(request.SourceId, request.LastReceivedId),
+                EditedMessages = await _chatRepository.GetEditedMessages(request.SourceId, request.LastEditedId),
+                DeletedMessages = await _chatRepository.GetDeletedMessages(request.SourceId, request.LastDeletedId)
             };
         }
     }

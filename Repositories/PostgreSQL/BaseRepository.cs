@@ -1,9 +1,7 @@
 ﻿using ChatServer.Repositories.Interfaces;
 using Npgsql;
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using System.Reflection;
@@ -42,7 +40,7 @@ namespace ChatServer.Repositories.PostgreSQL
                 ConnectionString = FromHerokuConnectionString(ConnectionString);
             }
             this.ConnectionString = ConnectionString;
-            PerformUpgrade();
+            PerformUpgrade().Wait();
         }
 
         public long LatestDatabaseVersion { get; } = 1;
@@ -65,16 +63,16 @@ namespace ChatServer.Repositories.PostgreSQL
             return reader.ReadToEnd();
         }
 
-        private void UpdateDbVersion(long current)
+        private async Task UpdateDbVersion(long current)
         {
-            using var conn = GetConnection();
+            using var conn = await GetConnection();
 
-            conn.Execute("INSERT INTO chat.DbUpgrade (Version, DateInstalled) VALUES (@current, CURRENT_DATE)", new { current });
+            await conn.ExecuteAsync("INSERT INTO chat.DbUpgrade (Version, DateInstalled) VALUES (@current, CURRENT_DATE)", new { current });
         }
 
-        public void PerformUpgrade()
+        public async Task PerformUpgrade()
         {
-            long currentVersion = GetDatabaseVersion();
+            long currentVersion = await GetDatabaseVersion();
 
             try
             {
@@ -86,11 +84,11 @@ namespace ChatServer.Repositories.PostgreSQL
                         return;
                     }
 
-                    using var conn = GetConnection();
-                    conn.Execute(script);
+                    using var conn = await GetConnection();
+                    await conn.ExecuteAsync(script);
 
-                    UpdateDbVersion(currentVersion + 1);
-                    currentVersion = GetDatabaseVersion();
+                    await UpdateDbVersion(currentVersion + 1);
+                    currentVersion = await GetDatabaseVersion();
 
                     Console.WriteLine($"Successfully performed upgrade to database version {currentVersion}");
                 }
@@ -101,14 +99,14 @@ namespace ChatServer.Repositories.PostgreSQL
             }
         }
 
-        public long GetDatabaseVersion()
+        public async Task<long> GetDatabaseVersion()
         {
             long version;
 
             try
             {
-                using var conn = GetConnection();
-                version = conn.QuerySingle<long>("SELECT COALESCE(MAX(Version), 0) FROM chat.DbUpgrade");
+                using var conn = await GetConnection();
+                version = await conn.QuerySingleAsync<long>("SELECT COALESCE(MAX(Version), 0) FROM chat.DbUpgrade");
             }
             catch (Exception e)
             {
@@ -122,22 +120,12 @@ namespace ChatServer.Repositories.PostgreSQL
             return version;
         }
 
-        public IDbConnection GetConnection()
+        public async Task<IDbConnection> GetConnection()
         {
             var conn = new NpgsqlConnection(ConnectionString);
-            conn.Open();
+            await conn.OpenAsync();
 
             return conn;
-        }
-
-        public IDbCommand GetCommand(string query, IDbConnection connection)
-        {
-            return new NpgsqlCommand(query, connection as NpgsqlConnection);
-        }
-
-        public IDbDataParameter GetParameter(string name, object value)
-        {
-            return new NpgsqlParameter(name, value);
         }
     }
 }

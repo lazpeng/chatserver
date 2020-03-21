@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
+﻿using System.Data;
 using System.Threading.Tasks;
 
 namespace ChatServer.Repositories.Interfaces
 {
     public interface IBaseRepository
     {
-        IDbConnection GetConnection();
-        IDbCommand GetCommand(string Query, IDbConnection Connection);
-        IDbDataParameter GetParameter(string Name, object Value);
-        void PerformUpgrade();
-        long GetDatabaseVersion();
+        Task<IDbConnection> GetConnection();
+        Task PerformUpgrade();
+        Task<long> GetDatabaseVersion();
         long LatestDatabaseVersion { get; }
     }
 }

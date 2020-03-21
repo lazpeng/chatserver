@@ -5,19 +5,20 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ChatServer.Domain
 {
     public class AuthDomain : IAuthDomain
     {
-        private readonly IAuthRepository authRepository;
-        private readonly IUserRepository userRepository;
+        private readonly IAuthRepository _authRepository;
+        private readonly IUserDomain _userDomain;
         private readonly TimeSpan TokenValidity = TimeSpan.FromHours(12);
 
-        public AuthDomain(IAuthRepository authRepository, IUserRepository userRepository)
+        public AuthDomain(IAuthRepository authRepository, IUserDomain userDomain)
         {
-            this.authRepository = authRepository;
-            this.userRepository = userRepository;
+            _authRepository = authRepository;
+            _userDomain = userDomain;
         }
 
         private string GenerateSalt()
@@ -38,27 +39,29 @@ namespace ChatServer.Domain
             return Convert.ToBase64String(algo.ComputeHash(finalBytes));
         }
 
-        public void UpdateUserPassword(string UserId, string Password)
+        public async Task UpdateUserPassword(string UserId, string Password)
         {
             var newSalt = GenerateSalt();
             var newHash = CalculateHash(Password, newSalt);
 
-            authRepository.SavePasswordHash(UserId, newHash, newSalt);
+            await _authRepository.SavePasswordHash(UserId, newHash, newSalt);
         }
 
-        public bool IsTokenValid(string UserId, string Token)
+        public async Task<bool> IsTokenValid(string UserId, string Token)
         {
-            return authRepository.GetValidTokensForUser(UserId).Contains(Token);
+            return (await _authRepository.GetValidTokensForUser(UserId)).Contains(Token);
         }
 
-        public LoginResponse PerformLogin(string UserName, string Password)
+        public async Task<LoginResponse> PerformLogin(string UserName, string Password, bool AppearOffline)
         {
-            var users = userRepository.Find(UserName, false);
+            await _authRepository.DeleteExpiredSessions();
+
+            var users = await _userDomain.Search(UserName, false);
             if(users.Any())
             {
                 var user = users.First();
 
-                var hashAndSalt = authRepository.GetPasswordHashAndSalt(user.Id);
+                var hashAndSalt = await _authRepository.GetPasswordHashAndSalt(user.Id);
 
                 var calculated = CalculateHash(Password, hashAndSalt.Item2);
 
@@ -66,9 +69,12 @@ namespace ChatServer.Domain
                 {
                     var token = Guid.NewGuid().ToString();
 
-                    authRepository.SaveNewToken(user.Id, token, TokenValidity);
-                    userRepository.UpdateLastLogin(user.Id);
-                    userRepository.UpdateLastSeen(user.Id);
+                    await _authRepository.SaveNewToken(user.Id, token, TokenValidity);
+                    if(!AppearOffline)
+                    {
+                        await _userDomain.UpdateLastLogin(user.Id);
+                        await _userDomain.UpdateLastSeen(user.Id);
+                    }
 
                     return new LoginResponse
                     {
