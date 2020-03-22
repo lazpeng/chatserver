@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System;
 using System.Security.Cryptography;
 using ChatServer.Helpers;
+using ChatServer.Models.Requests;
 
 namespace ChatServer.Domain
 {
@@ -82,6 +83,7 @@ namespace ChatServer.Domain
 
         public async Task<UserModel> Register(UserModel user)
         {
+            user.DataHash = GenerateSalt();
             return await _userRepository.Register(user);
         }
 
@@ -139,6 +141,7 @@ namespace ChatServer.Domain
         public async Task Edit(string Id, UserModel User)
         {
             User.Id = Id;
+            User.DataHash = GenerateSalt();
 
             await _userRepository.Edit(User);
 
@@ -151,6 +154,21 @@ namespace ChatServer.Domain
 
                 await UpdateUserPassword(Id, User.Password);
             }
+        }
+
+        public async Task<List<string>> CheckUsersUpdate(CheckUserUpdateRequest Request)
+        {
+            var outdated = new List<string>();
+
+            foreach(var user in Request.KnownUsers)
+            {
+                if(! await _userRepository.IsUserUpToDate(user.UserId, user.LastDataHash))
+                {
+                    outdated.Add(user.UserId);
+                }
+            }
+
+            return outdated;
         }
     }
 }

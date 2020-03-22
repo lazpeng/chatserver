@@ -61,9 +61,9 @@ namespace ChatServer.Repositories.PostgreSQL
             try
             {
                 await conn.ExecuteAsync("INSERT INTO chat.USERS(Id, UserName, FullName, Email, Bio, AccountCreated," +
-                    " LastLogin, LastSeen, DateOfBirth, FindInSearch, OpenChat, PasswordHash, PasswordSalt) VALUES (" +
+                    " LastLogin, LastSeen, DateOfBirth, FindInSearch, OpenChat, PasswordHash, PasswordSalt, DataHash) VALUES (" +
                     " @Id, @Username, @FullName, @Email, @Bio, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @DateOfBirth," +
-                    " @FindInSearch, @OpenChat, '', '')", user);
+                    " @FindInSearch, @OpenChat, '', '', @DataHash)", user);
 
                 var authRepository = new AuthRepository(ConnectionString);
                 await new UserDomain(this, authRepository).UpdateUserPassword(user.Id, user.Password);
@@ -177,10 +177,21 @@ namespace ChatServer.Repositories.PostgreSQL
 
             var query = "UPDATE chat.USERS SET" +
                         " UserName = @Username, FullName = @FullName, Email = @Email, Bio = @Bio, DateOfBirth = @DateOfBirth" +
-                        " FindInSearch = @FindInSearch, OpenChat = @OpenChat" +
+                        " FindInSearch = @FindInSearch, OpenChat = @OpenChat, DataHash = @DataHash" +
                         " WHERE Id = @Id";
 
             await conn.ExecuteAsync(query, User);
+        }
+
+        public async Task<bool> IsUserUpToDate(string UserId, string LastKnownDataHash)
+        {
+            using var conn = await GetConnection();
+
+            var query = "SELECT DataHash FROM chat.USERS Where UserId = @UserId";
+
+            var currentHash = await conn.QuerySingleAsync<string>(query, new { UserId });
+
+            return currentHash == LastKnownDataHash;
         }
     }
 }

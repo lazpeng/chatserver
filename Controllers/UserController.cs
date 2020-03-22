@@ -344,5 +344,31 @@ namespace ChatServer.Controllers
                 }
             }
         }
+
+        [HttpPost("checkUpdate")]
+        public async Task<IActionResult> CheckUsersUpdate([FromBody] CheckUserUpdateRequest Request)
+        {
+            try
+            {
+                if (!await _authDomain.IsTokenValid(Request.SourceId, Request.Token))
+                {
+                    return Unauthorized();
+                }
+
+                return Ok(await _userDomain.CheckUsersUpdate(Request));
+            }
+            catch (Exception e)
+            {
+                if (e is ChatBaseException)
+                {
+                    return BadRequest(e.Message);
+                }
+                else
+                {
+                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
+                    return StatusCode(500, e.Message);
+                }
+            }
+        }
     }
 }

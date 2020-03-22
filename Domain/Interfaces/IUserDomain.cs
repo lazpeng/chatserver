@@ -1,4 +1,5 @@
 ﻿using ChatServer.Models;
+using ChatServer.Models.Requests;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -22,5 +23,6 @@ namespace ChatServer.Domain.Interfaces
         Task UpdateLastSeen(string UserId);
         Task Edit(string TargetId, UserModel Request);
         Task UpdateUserPassword(string UserId, string Password);
+        Task<List<string>> CheckUsersUpdate(CheckUserUpdateRequest Request);
     }
 }

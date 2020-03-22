@@ -11,7 +11,7 @@ namespace ChatServer.Models
         public int MajorVersion { get; } = 1;
         public int MinorVersion { get; } = 0;
         public int Revision { get; } = 0;
-        public string VersionSuffix { get; } = "beta";
+        public string VersionSuffix { get; } = "";
         public string FullVersion 
         { 
             get

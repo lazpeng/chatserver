@@ -19,5 +19,6 @@ namespace ChatServer.Controllers.Interfaces
         Task<IActionResult> FriendList(string SourceId, [FromBody] string SessionToken);
         Task<IActionResult> BlockList(string SourceId, [FromBody] string SessionToken);
         Task<IActionResult> DeleteAccount(string SourceId, [FromBody] string SessionToken);
+        Task<IActionResult> CheckUsersUpdate([FromBody] CheckUserUpdateRequest Request);
     }
 }

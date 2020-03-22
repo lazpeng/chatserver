@@ -25,5 +25,7 @@ namespace ChatServer.Models
         [MinLength(6, ErrorMessage = "Password must have at least 6 characters")]
         [Required(AllowEmptyStrings = false, ErrorMessage = "Password is required")]
         public string Password { get; set; }
+        public string ProfilePicUrl { get; set; }
+        public string DataHash { get; set; }
     }
 }
