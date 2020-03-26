@@ -92,8 +92,16 @@ namespace ChatServer.Repositories.PostgreSQL
         public async Task SendFriendRequest(string SourceId, string TargetId)
         {
             using var conn = await GetConnection();
-            var query = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, CURRENT_TIMESTAMP)";
-            await conn.ExecuteAsync(query, new { Id = SourceId, Target = TargetId });
+            // Attempt to resend a previously sent (and rejected) friend request if one already exists
+            var query = "UPDATE chat.FRIENDS SET SettleDate = NULL, Accepted = 0, SentDate = CURRENT_TIMESTAMP" +
+                "WHERE A = @SourceId AND B = @Target";
+
+            var affected = await conn.ExecuteAsync(query, new { SourceId, TargetId });
+            if(affected == 0)
+            {
+                query = "INSERT INTO chat.FRIENDS(A, B, SentDate) VALUES (@Id, @Target, CURRENT_TIMESTAMP)";
+                await conn.ExecuteAsync(query, new { Id = SourceId, Target = TargetId });
+            }
         }
 
         public async Task AnswerFriendRequest(string SourceId, string TargetId, bool Accepted)
@@ -164,7 +172,16 @@ namespace ChatServer.Repositories.PostgreSQL
             await conn.ExecuteAsync(query, new { Id });
         }
 
-        public async Task<bool> HasFriendRequestSentToTarget(string SourceId, string TargetId)
+        public async Task<bool> HasFriendRequestRejectedByTarget(string SourceId, string TargetId)
+        {
+            using var conn = await GetConnection();
+
+            var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A = @Id AND B = @Target AND Accepted = 0 AND SettleDate IS NOT NULL";
+
+            return await conn.QuerySingleAsync<long>(query, new { SourceId, TargetId }) > 0;
+        }
+
+        public async Task<bool> HasFriendRequestPendingToTarget(string SourceId, string TargetId)
         {
             using var conn = await GetConnection();
             var query = "SELECT COUNT(*) FROM chat.FRIENDS WHERE A = @Id AND B = @Target AND SettleDate IS NULL";

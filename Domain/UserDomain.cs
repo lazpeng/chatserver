@@ -24,13 +24,19 @@ namespace ChatServer.Domain
 
         public async Task SendFriendRequest(string SourceId, string TargetId)
         {
-            if(await _userRepository.IsUserBlocked(TargetId, SourceId))
+            if (await _userRepository.IsUserBlocked(TargetId, SourceId))
             {
                 throw new ChatBaseException("Cannot send friend request");
-            } else if(await _userRepository.HasFriendRequestSentToTarget(TargetId, SourceId))
+            } else if (await _userRepository.HasFriendRequestPendingToTarget(TargetId, SourceId))
             {
                 await _userRepository.AnswerFriendRequest(TargetId, SourceId, true);
-            } else if(! await _userRepository.AreUsersFriends(SourceId, TargetId) && ! await _userRepository.HasFriendRequestSentToTarget(SourceId, TargetId))
+            } else if(await _userRepository.HasFriendRequestRejectedByTarget(SourceId, TargetId))
+            {
+                // User has previously sent a request to source user but source rejected
+                // delete and resend
+                await _userRepository.RemoveFriend(TargetId, SourceId);
+                await _userRepository.SendFriendRequest(SourceId, TargetId);
+            } else if(! await _userRepository.AreUsersFriends(SourceId, TargetId) && ! await _userRepository.HasFriendRequestPendingToTarget(SourceId, TargetId))
             {
                 await _userRepository.SendFriendRequest(SourceId, TargetId);
             }
@@ -43,6 +49,11 @@ namespace ChatServer.Domain
 
         public async Task BlockUser(string SourceId, string TargetId)
         {
+            if(await _userRepository.AreUsersFriends(SourceId, TargetId))
+            {
+                await RemoveFriend(SourceId, TargetId);
+            }
+
             if(! await _userRepository.IsUserBlocked(SourceId, TargetId))
             {
                 await _userRepository.BlockUser(SourceId, TargetId);
@@ -91,7 +102,7 @@ namespace ChatServer.Domain
         {
             var user = await _userRepository.Get(Id);
 
-            if(!await _userRepository.AreUsersFriends(Id, FromId))
+            if(!await _userRepository.AreUsersFriends(Id, FromId) && FromId != Id)
             {
                 user.DateOfBirth = DateTime.MinValue;
                 user.FullName = user.Email = null;

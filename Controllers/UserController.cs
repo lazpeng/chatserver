@@ -97,7 +97,7 @@ namespace ChatServer.Controllers
 
                 await _userDomain.Edit(Id, User);
 
-                return Ok();
+                return Ok(await _userDomain.Get(Id, Id));
             } catch (Exception e)
             {
                 if (e is ChatBaseException)
@@ -117,7 +117,8 @@ namespace ChatServer.Controllers
         {
             try
             {
-                return Ok(await _userDomain.Register(user));
+                var result = await _userDomain.Register(user);
+                return Created(result.Id, result);
             } catch (Exception e)
             {
                 if (e is ChatBaseException)

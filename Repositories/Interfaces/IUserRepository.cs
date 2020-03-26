@@ -9,7 +9,8 @@ namespace ChatServer.Repositories.Interfaces
         Task<List<UserModel>> Find(string Username, bool IncludePartialMatches = true);
         Task<UserModel> Get(string UserId);
         Task<UserModel> Register(UserModel User);
-        Task<bool> HasFriendRequestSentToTarget(string SourceId, string TargetId);
+        Task<bool> HasFriendRequestRejectedByTarget(string SourceId, string TargetId);
+        Task<bool> HasFriendRequestPendingToTarget(string SourceId, string TargetId);
         Task SendFriendRequest(string SourceId, string TargetId);
         Task AnswerFriendRequest(string SourceId, string TargetId, bool Accepted);
         Task<List<FriendModel>> FriendList(string UserId);
