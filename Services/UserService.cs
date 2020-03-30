@@ -11,12 +11,12 @@ using ChatServer.Models.Requests;
 
 namespace ChatServer.Domain
 {
-    public class UserDomain : IUserDomain
+    public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
         private readonly IAuthRepository _authRepository;
 
-        public UserDomain(IUserRepository userRepository, IAuthRepository authRepository)
+        public UserService(IUserRepository userRepository, IAuthRepository authRepository)
         {
             _userRepository = userRepository;
             _authRepository = authRepository;

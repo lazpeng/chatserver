@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using ChatServer.Controllers.Interfaces;
 using ChatServer.Domain.Interfaces;
-using ChatServer.Exceptions;
 using ChatServer.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -13,95 +11,38 @@ namespace ChatServer.Controllers
     [Route("api/[controller]")]
     public class ChatController : ControllerBase, IChatController
     {
-        private readonly ILogger<ChatController> _logger;
-        private readonly IChatDomain _chatDomain;
-        private readonly IAuthDomain _authDomain;
+        private readonly IChatService _chatService;
+        private readonly IAuthService _authService;
 
-        public ChatController(ILogger<ChatController> logger, IChatDomain chatDomain, IAuthDomain authDomain)
+        public ChatController(IChatService chatDomain, IAuthService authDomain)
         {
-            _logger = logger;
-            _chatDomain = chatDomain;
-            _authDomain = authDomain;
+            _chatService = chatDomain;
+            _authService = authDomain;
         }
 
         [HttpPut("send")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
-            try
-            {
-                if (! await _authDomain.IsTokenValid(request.SourceId, request.Token))
-                {
-                    return Unauthorized();
-                }
+            await _authService.Authorize(request);
 
-                return Ok(_chatDomain.SendMessage(request));
-            } catch (Exception e)
-            {
-                if (e is ChatBaseException)
-                {
-                    return BadRequest(e.Message);
-                } else if(e is ChatPermissionException)
-                {
-                    return Unauthorized(e.Message);
-                }
-                else
-                {
-                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
-                    return StatusCode(500, e.Message);
-                }
-            }
+            return Ok(_chatService.SendMessage(request));
         }
 
         [HttpGet("check")]
         public async Task<IActionResult> CheckNewMessages([FromBody] CheckNewRequest request)
         {
-            try
-            {
-                if(! await _authDomain.IsTokenValid(request.SourceId, request.Token))
-                {
-                    return Unauthorized();
-                }
+            await _authService.Authorize(request);
 
-                return Ok(_chatDomain.CheckNewMessages(request));
-            } catch (Exception e)
-            {
-                if (e is ChatBaseException)
-                {
-                    return BadRequest(e.Message);
-                }
-                else
-                {
-                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
-                    return StatusCode(500, e.Message);
-                }
-            }
+            return Ok(_chatService.CheckNewMessages(request));
         }
 
         [HttpPost("seen")]
         public async Task<IActionResult> UpdateSeen([FromBody] UpdateSeenRequest request)
         {
-            try
-            {
-                if (! await _authDomain.IsTokenValid(request.SourceId, request.Token))
-                {
-                    return Unauthorized();
-                }
+            await _authService.Authorize(request);
 
-                await _chatDomain.UpdateSeen(request);
-                return Ok();
-            }
-            catch (Exception e)
-            {
-                if (e is ChatBaseException)
-                {
-                    return BadRequest(e.Message);
-                }
-                else
-                {
-                    _logger.LogError($"Exception occurred. {e.Message}\n{e.StackTrace}");
-                    return StatusCode(500, e.Message);
-                }
-            }
+            await _chatService.UpdateSeen(request);
+            return Ok();
         }
     }
 }

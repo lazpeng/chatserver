@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace ChatServer.Domain
 {
-    public class ChatDomain : IChatDomain
+    public class ChatService : IChatService
     {
         private readonly IChatRepository _chatRepository;
-        private readonly IUserDomain _userDomain;
+        private readonly IUserService _userDomain;
 
-        public ChatDomain(IChatRepository chatRepository, IUserDomain userDomain)
+        public ChatService(IChatRepository chatRepository, IUserService userDomain)
         {
             _chatRepository = chatRepository;
             _userDomain = userDomain;
@@ -31,7 +31,7 @@ namespace ChatServer.Domain
 
         public async Task EditMessage(EditMessageRequest request)
         {
-            if (await _chatRepository.GetSentUserId(request.MessageId) != request.UserId)
+            if (await _chatRepository.GetSentUserId(request.MessageId) != request.SourceId)
             {
                 throw new ChatPermissionException("Not sent by this user");
             }
@@ -40,7 +40,7 @@ namespace ChatServer.Domain
 
         public async Task DeleteMessage(DeleteMessageRequest request)
         {
-            if(await _chatRepository.GetSentUserId(request.MessageId) != request.UserId)
+            if(await _chatRepository.GetSentUserId(request.MessageId) != request.SourceId)
             {
                 throw new ChatPermissionException("Not sent by this user");
             }

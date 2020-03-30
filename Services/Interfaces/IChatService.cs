@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ChatServer.Domain.Interfaces
 {
-    public interface IChatDomain
+    public interface IChatService
     {
         Task<MessageModel> SendMessage(SendMessageRequest request);
 

@@ -13,7 +13,7 @@ namespace ChatServer.Repositories.PostgreSQL
 {
     public class UserRepository : BaseRepository, IUserRepository
     {
-        public UserRepository(string ConnectionString) : base(ConnectionString) { }
+        public UserRepository(IConnectionStringProvider provider) : base(provider) { }
 
         public async Task<List<UserModel>> Find(string username, bool includePartial = true)
         {
@@ -66,7 +66,7 @@ namespace ChatServer.Repositories.PostgreSQL
                     " @FindInSearch, @OpenChat, '', '', @DataHash)", user);
 
                 var authRepository = new AuthRepository(ConnectionString);
-                await new UserDomain(this, authRepository).UpdateUserPassword(user.Id, user.Password);
+                await new UserService(this, authRepository).UpdateUserPassword(user.Id, user.Password);
 
                 return await Get(user.Id);
             }
@@ -85,7 +85,7 @@ namespace ChatServer.Repositories.PostgreSQL
                     message = constraintMessage[ex.ConstraintName];
                 }
 
-                throw new ChatDataException(message);
+                throw new Exception(message);
             }
         }
 

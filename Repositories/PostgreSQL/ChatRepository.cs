@@ -11,7 +11,7 @@ namespace ChatServer.Repositories.PostgreSQL
 {
     public class ChatRepository : BaseRepository, IChatRepository
     {
-        public ChatRepository(string ConnectionString) : base(ConnectionString) { }
+        public ChatRepository(IConnectionStringProvider provider) : base(provider) { }
 
         public async Task<MessageModel> SendMessage(SendMessageRequest request)
         {

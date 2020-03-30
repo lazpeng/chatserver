@@ -5,24 +5,34 @@ using ChatServer.Helpers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatServer.Models.Requests;
+using ChatServer.Exceptions;
 
 namespace ChatServer.Domain
 {
-    public class AuthDomain : IAuthDomain
+    public class AuthService : IAuthService
     {
         private readonly IAuthRepository _authRepository;
-        private readonly IUserDomain _userDomain;
+        private readonly IUserService _userDomain;
         private readonly TimeSpan TokenValidity = TimeSpan.FromHours(12);
 
-        public AuthDomain(IAuthRepository authRepository, IUserDomain userDomain)
+        public AuthService(IAuthRepository authRepository, IUserService userDomain)
         {
             _authRepository = authRepository;
             _userDomain = userDomain;
         }
 
-        public async Task<bool> IsTokenValid(string UserId, string Token)
+        private async Task<bool> IsTokenValid(string UserId, string Token)
         {
             return (await _authRepository.GetValidTokensForUser(UserId)).Contains(Token);
+        }
+
+        public async Task Authorize(BaseAuthenticatedRequest Request)
+        {
+            if(! await IsTokenValid(Request.SourceId, Request.Token))
+            {
+                throw new ChatAuthException();
+            }
         }
 
         public async Task<LoginResponse> PerformLogin(string UserName, string Password, bool AppearOffline)

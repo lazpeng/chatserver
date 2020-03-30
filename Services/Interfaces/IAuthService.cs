@@ -1,11 +1,12 @@
-﻿using ChatServer.Models.Responses;
+﻿using ChatServer.Models.Requests;
+using ChatServer.Models.Responses;
 using System.Threading.Tasks;
 
 namespace ChatServer.Domain.Interfaces
 {
-    public interface IAuthDomain
+    public interface IAuthService
     {
-        Task<bool> IsTokenValid(string UserId, string Token);
+        Task Authorize(BaseAuthenticatedRequest Request);
         Task<LoginResponse> PerformLogin(string UserName, string Password, bool AppearOffline);
     }
 }

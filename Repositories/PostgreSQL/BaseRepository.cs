@@ -11,35 +11,11 @@ namespace ChatServer.Repositories.PostgreSQL
 {
     public class BaseRepository : IBaseRepository
     {
-        protected readonly string ConnectionString;
+        protected readonly IConnectionStringProvider ConnectionString;
 
-        private string FromHerokuConnectionString(string Conn)
+        public BaseRepository(IConnectionStringProvider provider)
         {
-            var databaseUri = new Uri(Conn);
-            var userInfo = databaseUri.UserInfo.Split(':');
-
-            var builder = new NpgsqlConnectionStringBuilder
-            {
-                Host = databaseUri.Host,
-                Port = databaseUri.Port,
-                Username = userInfo[0],
-                Password = userInfo[1],
-                Database = databaseUri.LocalPath.TrimStart('/'),
-                Pooling = true,
-                MinPoolSize = 1,
-                MaxPoolSize = 20
-            };
-
-            return builder.ToString();
-        }
-
-        public BaseRepository(string ConnectionString)
-        {
-            if (ConnectionString.StartsWith("postgres://"))
-            {
-                ConnectionString = FromHerokuConnectionString(ConnectionString);
-            }
-            this.ConnectionString = ConnectionString;
+            ConnectionString = provider;
             PerformUpgrade().Wait();
         }
 
@@ -122,7 +98,7 @@ namespace ChatServer.Repositories.PostgreSQL
 
         public async Task<IDbConnection> GetConnection()
         {
-            var conn = new NpgsqlConnection(ConnectionString);
+            var conn = new NpgsqlConnection(ConnectionString.GetConnectionString());
             await conn.OpenAsync();
 
             return conn;

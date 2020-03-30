@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ChatServer.Domain.Interfaces
 {
-    public interface IUserDomain
+    public interface IUserService
     {
         Task SendFriendRequest(string SourceId, string TargetId);
         Task RemoveFriend(string SourceId, string TargetId);

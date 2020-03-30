@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace ChatServer.Models.Requests
 {
-    public class EditUserRequest : UserModel
+    public class EditUserRequest : BaseAuthenticatedRequest
     {
-        public string Token { get; set; }
+        public UserModel User { get; set; }
     }
 }

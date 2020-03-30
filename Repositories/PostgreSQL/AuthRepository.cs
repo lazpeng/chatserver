@@ -9,7 +9,7 @@ namespace ChatServer.Repositories.PostgreSQL
 {
     public class AuthRepository : BaseRepository, IAuthRepository
     {
-        public AuthRepository(string ConnectionString) : base(ConnectionString) { }
+        public AuthRepository(IConnectionStringProvider provider) : base(provider) { }
 
         public async Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId)
         {

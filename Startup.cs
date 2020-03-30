@@ -1,18 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ChatServer.Domain;
 using ChatServer.Domain.Interfaces;
+using ChatServer.Exceptions;
 using ChatServer.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace ChatServer
 {
@@ -25,32 +21,39 @@ namespace ChatServer
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? Configuration.GetConnectionString("Local");
+            var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+                ?? Configuration.GetConnectionString("Local");
+
+            services.AddSingleton<IConnectionStringProvider>(new Repositories.PostgreSQL.ConnectionStringProvider(connectionString));
 
             Console.WriteLine($"Using connection string: \"{connectionString}\"");
 
             switch (Configuration.GetValue<string>("Database").ToUpper())
             {
                 case "POSTGRESQL":
-                    services.AddSingleton<IAuthRepository>(new Repositories.PostgreSQL.AuthRepository(connectionString));
-                    services.AddSingleton<IChatRepository>(new Repositories.PostgreSQL.ChatRepository(connectionString));
-                    services.AddSingleton<IUserRepository>(new Repositories.PostgreSQL.UserRepository(connectionString));
+                    services.AddScoped<IAuthRepository, Repositories.PostgreSQL.AuthRepository>();
+                    services.AddScoped<IChatRepository, Repositories.PostgreSQL.ChatRepository>();
+                    services.AddScoped<IUserRepository, Repositories.PostgreSQL.UserRepository>();
                     break;
                 default:
                     throw new Exception($"Unrecognized database \"{Configuration.GetValue<string>("Database")}\"");
             }
 
-            services.AddScoped(typeof(IUserDomain), typeof(UserDomain));
-            services.AddScoped(typeof(IChatDomain), typeof(ChatDomain));
-            services.AddScoped(typeof(IAuthDomain), typeof(AuthDomain));
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IChatService, ChatService>();
+            services.AddScoped<IUserService, UserService>();
+
+            services.AddSwaggerGen(options =>
+            {
+                options.CustomSchemaIds(x => x.FullName);
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "ChatServer API", Version = "v1" });
+            });
 
             services.AddControllers();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -58,11 +61,20 @@ namespace ChatServer
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseMiddleware<ExceptionMiddleware>();
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "ChatServer API");
+            });
 
             app.UseEndpoints(endpoints =>
             {

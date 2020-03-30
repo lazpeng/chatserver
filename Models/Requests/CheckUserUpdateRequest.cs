@@ -9,12 +9,8 @@ namespace ChatServer.Models.Requests
         public string LastDataHash { get; set; }
     }
 
-    public class CheckUserUpdateRequest
+    public class CheckUserUpdateRequest : BaseAuthenticatedRequest
     {
-        [Required]
-        public string SourceId { get; set; }
-        [Required]
-        public string Token { get; set; }
         public List<CheckUserUpdateModel> KnownUsers { get; set; }
     }
 }

@@ -8,7 +8,7 @@ namespace ChatServer.Controllers.Interfaces
     public interface IUserController
     {
         Task<IActionResult> Search(string Username);
-        Task<IActionResult> Get(string Id, [FromBody] GetUserRequest request);
+        Task<IActionResult> Get(string Id, [FromBody] BaseAuthenticatedRequest request);
         Task<IActionResult> Edit(string Id, [FromBody] EditUserRequest Model);
         Task<IActionResult> Register([FromBody] UserModel user);
         Task<IActionResult> AddFriend(string SourceId, string TargetId, [FromBody] string SessionToken);
