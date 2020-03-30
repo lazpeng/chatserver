@@ -1,7 +1,7 @@
 using ChatServer.Models;
 using Microsoft.AspNetCore.Mvc;
 using ChatServer.Controllers.Interfaces;
-using ChatServer.Domain.Interfaces;
+using ChatServer.Services.Interfaces;
 using ChatServer.Models.Requests;
 using System.Threading.Tasks;
 

@@ -2,7 +2,7 @@
 using ChatServer.Models.Responses;
 using System.Threading.Tasks;
 
-namespace ChatServer.Domain.Interfaces
+namespace ChatServer.Services.Interfaces
 {
     public interface IAuthService
     {

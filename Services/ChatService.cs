@@ -1,4 +1,4 @@
-﻿using ChatServer.Domain.Interfaces;
+﻿using ChatServer.Services.Interfaces;
 using ChatServer.Exceptions;
 using ChatServer.Models;
 using ChatServer.Models.Requests;
@@ -6,7 +6,7 @@ using ChatServer.Models.Responses;
 using ChatServer.Repositories.Interfaces;
 using System.Threading.Tasks;
 
-namespace ChatServer.Domain
+namespace ChatServer.Services
 {
     public class ChatService : IChatService
     {

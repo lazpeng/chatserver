@@ -1,6 +1,6 @@
 using System;
-using ChatServer.Domain;
-using ChatServer.Domain.Interfaces;
+using ChatServer.Services;
+using ChatServer.Services.Interfaces;
 using ChatServer.Exceptions;
 using ChatServer.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;

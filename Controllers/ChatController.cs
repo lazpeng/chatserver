@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 using ChatServer.Controllers.Interfaces;
-using ChatServer.Domain.Interfaces;
+using ChatServer.Services.Interfaces;
 using ChatServer.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace ChatServer.Controllers
 {

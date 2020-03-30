@@ -1,4 +1,4 @@
-﻿using ChatServer.Domain.Interfaces;
+﻿using ChatServer.Services.Interfaces;
 using ChatServer.Models.Responses;
 using ChatServer.Repositories.Interfaces;
 using ChatServer.Helpers;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using ChatServer.Models.Requests;
 using ChatServer.Exceptions;
 
-namespace ChatServer.Domain
+namespace ChatServer.Services
 {
     public class AuthService : IAuthService
     {

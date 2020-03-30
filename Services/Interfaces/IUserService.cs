@@ -3,7 +3,7 @@ using ChatServer.Models.Requests;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ChatServer.Domain.Interfaces
+namespace ChatServer.Services.Interfaces
 {
     public interface IUserService
     {

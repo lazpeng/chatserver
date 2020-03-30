@@ -1,4 +1,4 @@
-﻿using ChatServer.Domain.Interfaces;
+﻿using ChatServer.Services.Interfaces;
 using ChatServer.Models;
 using ChatServer.Repositories.Interfaces;
 using ChatServer.Exceptions;
@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 using ChatServer.Helpers;
 using ChatServer.Models.Requests;
 
-namespace ChatServer.Domain
+namespace ChatServer.Services
 {
     public class UserService : IUserService
     {
