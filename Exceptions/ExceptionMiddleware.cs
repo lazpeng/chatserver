@@ -39,6 +39,8 @@ namespace ChatServer.Exceptions
                 _ => HttpStatusCode.InternalServerError,
             });
 
+            Console.WriteLine($"An exception occurred: {exception.Message}\n{exception.StackTrace}");
+
             var details = new
             {
                 context.Response.StatusCode,
