@@ -11,11 +11,17 @@ namespace ChatServer.Repositories.PostgreSQL
     {
         public AuthRepository(IConnectionStringProvider provider) : base(provider) { }
 
+        private class PasswordAndSalt
+        {
+            public string PasswordHash { get; set; }
+            public string PasswordSalt { get; set; }
+        }
+
         public async Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId)
         {
             using var conn = await GetConnection();
-            var result = await conn.QuerySingleAsync("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId", new { UserId });
-            return new Tuple<string, string>(result["PasswordHash"], result["PasswordSalt"]);
+            var result = await conn.QuerySingleAsync<PasswordAndSalt>("SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id=@UserId", new { UserId });
+            return new Tuple<string, string>(result.PasswordHash, result.PasswordSalt);
         }
 
         public async Task<List<string>> GetValidTokensForUser(string Id)
