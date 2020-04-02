@@ -11,22 +11,27 @@ namespace ChatServer.Services
     public class ChatService : IChatService
     {
         private readonly IChatRepository _chatRepository;
-        private readonly IUserService _userDomain;
+        private readonly IUserService _userService;
+        private readonly IFriendService _friendService;
 
-        public ChatService(IChatRepository chatRepository, IUserService userDomain)
+        public ChatService(IChatRepository chatRepository, IUserService userDomain, IFriendService friendService)
         {
             _chatRepository = chatRepository;
-            _userDomain = userDomain;
+            _userService = userDomain;
+            _friendService = friendService;
         }
 
         public async Task<MessageModel> SendMessage(SendMessageRequest request)
         {
-            if(!await _userDomain.CanSendMessage(request.SourceId, request.TargetId))
+            var targetUser = await _userService.Get(request.SourceId, request.TargetId);
+
+            if(targetUser != null && 
+                (targetUser.OpenChat || await _friendService.AreUsersFriends(request.SourceId, request.TargetId)))
             {
-                throw new ChatPermissionException("Cannot send message to user");
+                return await _chatRepository.SendMessage(request);
             }
 
-            return await _chatRepository.SendMessage(request);
+            throw new ChatPermissionException("Cannot send message to user");
         }
 
         public async Task EditMessage(EditMessageRequest request)

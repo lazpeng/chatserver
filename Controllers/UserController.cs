@@ -63,66 +63,6 @@ namespace ChatServer.Controllers
             return Created(result.Id, result);
         }
 
-        [HttpPut("{SourceId}/friend/add/{TargetId}")]
-        public async Task<IActionResult> AddFriend(string SourceId, string TargetId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-            await _userService.SendFriendRequest(SourceId, TargetId);
-            return Ok();
-        }
-
-        [HttpPut("{SourceId}/friend/reject/{TargetId}")]
-        public async Task<IActionResult> RejectFriendRequest(string SourceId, string TargetId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-
-            await _userService.AnswerFriendRequest(SourceId, TargetId, false);
-            return Ok();
-        }
-
-        [HttpPut("{SourceId}/friend/remove/{TargetId}")]
-        public async Task<IActionResult> RemoveFriend(string SourceId, string TargetId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-
-            await _userService.RemoveFriend(SourceId, TargetId);
-            return Ok();
-        }
-
-        [HttpPut("{SourceId}/block/add/{TargetId}")]
-        public async Task<IActionResult> BlockUser(string SourceId, string TargetId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-
-            await _userService.BlockUser(SourceId, TargetId);
-            return Ok();
-        }
-
-        [HttpPut("{SourceId}/block/remove/{TargetId}")]
-        public async Task<IActionResult> UnblockUser(string SourceId, string TargetId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-
-            await _userService.RemoveBlock(SourceId, TargetId);
-            return Ok();
-        }
-
-        [HttpGet("{SourceId}/friendlist")]
-        public async Task<IActionResult> FriendList(string SourceId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-
-            return Ok(_userService.FriendList(SourceId));
-        }
-
-        [HttpGet("{SourceId}/blocklist")]
-        public async Task<IActionResult> BlockList(string SourceId, [FromBody] string Token)
-        {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
-
-            return Ok(_userService.BlockList(SourceId));
-        }
-
         [HttpDelete("{SourceId}")]
         public async Task<IActionResult> DeleteAccount(string SourceId, [FromBody] string Token)
         {

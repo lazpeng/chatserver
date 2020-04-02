@@ -28,14 +28,14 @@ namespace ChatServer
 
             services.AddSingleton<IConnectionStringProvider>(new Repositories.PostgreSQL.ConnectionStringProvider(connectionString));
 
-            Console.WriteLine($"Using connection string: \"{connectionString}\"");
-
             switch (Configuration.GetValue<string>("Database").ToUpper())
             {
                 case "POSTGRESQL":
                     services.AddScoped<IAuthRepository, Repositories.PostgreSQL.AuthRepository>();
                     services.AddScoped<IChatRepository, Repositories.PostgreSQL.ChatRepository>();
                     services.AddScoped<IUserRepository, Repositories.PostgreSQL.UserRepository>();
+                    services.AddScoped<IFriendRepository, Repositories.PostgreSQL.FriendRepository>();
+                    services.AddScoped<IBlockRepository, Repositories.PostgreSQL.BlockRepository>();
                     break;
                 default:
                     throw new Exception($"Unrecognized database \"{Configuration.GetValue<string>("Database")}\"");
@@ -44,6 +44,8 @@ namespace ChatServer
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IChatService, ChatService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IFriendService, FriendService>();
+            services.AddScoped<IBlockService, BlockService>();
 
             services.AddSwaggerGen(options =>
             {

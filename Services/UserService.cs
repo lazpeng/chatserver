@@ -15,94 +15,29 @@ namespace ChatServer.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IAuthRepository _authRepository;
+        private readonly IFriendService _friendService;
 
-        public UserService(IUserRepository userRepository, IAuthRepository authRepository)
+        public UserService(IUserRepository userRepository, IAuthRepository authRepository, IFriendService friendService)
         {
             _userRepository = userRepository;
             _authRepository = authRepository;
-        }
-
-        public async Task SendFriendRequest(string SourceId, string TargetId)
-        {
-            if (await _userRepository.IsUserBlocked(TargetId, SourceId))
-            {
-                throw new ChatBaseException("Cannot send friend request");
-            } else if (await _userRepository.HasFriendRequestPendingToTarget(TargetId, SourceId))
-            {
-                await _userRepository.AnswerFriendRequest(TargetId, SourceId, true);
-            } else if(await _userRepository.HasFriendRequestRejectedByTarget(SourceId, TargetId))
-            {
-                // User has previously sent a request to source user but source rejected
-                // delete and resend
-                await _userRepository.RemoveFriend(TargetId, SourceId);
-                await _userRepository.SendFriendRequest(SourceId, TargetId);
-            } else if(! await _userRepository.AreUsersFriends(SourceId, TargetId) && ! await _userRepository.HasFriendRequestPendingToTarget(SourceId, TargetId))
-            {
-                await _userRepository.SendFriendRequest(SourceId, TargetId);
-            }
-        }
-
-        public async Task RemoveFriend(string SourceId, string TargetId)
-        {
-            await _userRepository.RemoveFriend(SourceId, TargetId);
-        }
-
-        public async Task BlockUser(string SourceId, string TargetId)
-        {
-            if(await _userRepository.AreUsersFriends(SourceId, TargetId))
-            {
-                await RemoveFriend(SourceId, TargetId);
-            }
-
-            if(! await _userRepository.IsUserBlocked(SourceId, TargetId))
-            {
-                await _userRepository.BlockUser(SourceId, TargetId);
-            }
-        }
-
-        public async Task RemoveBlock(string SourceId, string TargetId)
-        {
-            await _userRepository.UnblockUser(SourceId, TargetId);
-        }
-
-        public async Task<bool> CanSendMessage(string FromUser, string ToUser)
-        {
-            var target = await _userRepository.Get(ToUser);
-
-            if(target != null)
-            {
-                return target.OpenChat || await _userRepository.AreUsersFriends(FromUser, ToUser);
-            }
-
-            return false;
-        }
-
-        public async Task<List<FriendModel>> FriendList(string UserId)
-        {
-            return await _userRepository.FriendList(UserId);
-        }
-
-        public async Task<List<string>> BlockList(string UserId)
-        {
-            return await _userRepository.BlockList(UserId);
-        }
-
-        public async Task AnswerFriendRequest(string UserId, string SourceId, bool Answer)
-        {
-            await _userRepository.AnswerFriendRequest(UserId, SourceId, Answer);
+            _friendService = friendService;
         }
 
         public async Task<UserModel> Register(UserModel user)
         {
             user.DataHash = GenerateSalt();
-            return await _userRepository.Register(user);
+            var result = await _userRepository.Register(user);
+            await UpdateUserPassword(user.Id, user.Password);
+
+            return result;
         }
 
         public async Task<UserModel> Get(string FromId, string Id)
         {
             var user = await _userRepository.Get(Id);
 
-            if(!await _userRepository.AreUsersFriends(Id, FromId) && FromId != Id)
+            if(!await _friendService.AreUsersFriends(Id, FromId) && FromId != Id)
             {
                 user.DateOfBirth = DateTime.MinValue;
                 user.FullName = user.Email = null;
