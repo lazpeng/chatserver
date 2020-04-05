@@ -73,7 +73,7 @@ namespace ChatServer.Repositories.PostgreSQL
         {
             using var connection = await GetConnection();
 
-            var query = "SELECT * FROM chat.FRIENDS WHERE A = @User OR B = @User";
+            var query = "SELECT A AS SourceId, B AS TargetId, AcceptDate AS FriendsSince, SentDate AS RequestSent FROM chat.FRIENDS WHERE A = @User OR B = @User";
 
             return (await connection.QueryAsync<FriendModel>(query, new { User })).ToList();
         }
