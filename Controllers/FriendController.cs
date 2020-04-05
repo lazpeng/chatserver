@@ -64,7 +64,7 @@ namespace ChatServer.Controllers
             return Ok();
         }
 
-        [HttpPost("request")]
+        [HttpPost("request/{TargetUser}")]
         public async Task<IActionResult> SendFriendRequest(string TargetUser, [FromBody] BaseAuthenticatedRequest Request)
         {
             await _authService.Authorize(Request);

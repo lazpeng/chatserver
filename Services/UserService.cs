@@ -35,16 +35,7 @@ namespace ChatServer.Services
 
         public async Task<UserModel> Get(string FromId, string Id)
         {
-            var user = await _userRepository.Get(Id);
-
-            if(!await _friendService.AreUsersFriends(Id, FromId) && FromId != Id)
-            {
-                user.DateOfBirth = DateTime.MinValue;
-                user.FullName = user.Email = null;
-                user.LastLogin = user.LastSeen = user.AccountCreated = null;
-            }
-
-            return user;
+            return await _userRepository.Get(Id);
         }
 
         public async Task<List<UserModel>> Search(string Username, bool Partial = true)

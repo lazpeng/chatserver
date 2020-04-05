@@ -29,13 +29,15 @@ namespace ChatServer.Controllers
             return Ok();
         }
 
-        public async Task<IActionResult> GetBlockedList(string SourceId, string Token)
+        [HttpGet]
+        public async Task<IActionResult> GetBlockedList([FromQuery] string SourceId, [FromQuery] string Token)
         {
             await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
 
             return Ok(await _blockService.GetBlockedList(SourceId));
         }
 
+        [HttpDelete("{Blocked}")]
         public async Task<IActionResult> RemoveBlock(string Blocked, [FromBody] BaseAuthenticatedRequest Request)
         {
             await _authService.Authorize(Request);
