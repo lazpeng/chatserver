@@ -71,7 +71,13 @@ namespace ChatServer.Controllers
 
             var request = await _friendService.SendFriendRequest(Request.SourceId, TargetUser);
 
-            return Created($"{request.Id}", request);
+            if(request != null)
+            {
+                return Created($"{request.Id}", request);
+            } else
+            {
+                return Ok();
+            }
         }
     }
 }

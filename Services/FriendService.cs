@@ -1,6 +1,7 @@
 ﻿using ChatServer.Models;
 using ChatServer.Repositories.Interfaces;
 using ChatServer.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -49,6 +50,10 @@ namespace ChatServer.Services
 
         public async Task<FriendRequestModel> SendFriendRequest(string SourceId, string TargetId)
         {
+            Console.WriteLine(await AreUsersFriends(SourceId, TargetId));
+            Console.WriteLine(await _blockService.IsUserBlocked(SourceId, TargetId));
+            Console.WriteLine(await _friendRepository.HasPendingRequest(SourceId, TargetId));
+
             FriendRequestModel result = null;
             if(!await AreUsersFriends(SourceId, TargetId) &&
                !await _blockService.IsUserBlocked(SourceId, TargetId) &&
