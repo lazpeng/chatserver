@@ -62,15 +62,6 @@ CREATE TABLE IF NOT EXISTS chat.BLOCKLIST (
     CONSTRAINT BLOCKLIST_BLOCKED FOREIGN KEY (BlockedId) REFERENCES chat.USERS (Id) ON DELETE CASCADE
 );
 
--- Currently active sessions after users log in
-CREATE TABLE IF NOT EXISTS chat.SESSIONS (
-    UserId CHAR(36) NOT NULL,
-    Token CHAR(36) NOT NULL,
-    CreatedOn TIMESTAMPTZ NOT NULL,
-    ExpirationDate TIMESTAMPTZ NOT NULL,
-    CONSTRAINT SESSIONS_PK PRIMARY KEY (UserId, Token)
-);
-
 -- Contains all sent messages, to whom and its content
 CREATE TABLE IF NOT EXISTS chat.MESSAGES (
     Id BIGSERIAL PRIMARY KEY,

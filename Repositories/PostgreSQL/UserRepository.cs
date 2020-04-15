@@ -115,5 +115,38 @@ namespace ChatServer.Repositories.PostgreSQL
 
             return currentHash == LastKnownDataHash;
         }
+
+        public async Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId)
+        {
+            using var conn = await GetConnection();
+
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT PasswordHash, PasswordSalt FROM chat.USERS WHERE Id = @UserId";
+            cmd.Parameters.Add(new NpgsqlParameter("@UserId", UserId));
+
+            var reader = cmd.ExecuteReader();
+
+            if (reader.Read())
+            {
+                return new Tuple<string, string>(reader.GetString(0), reader.GetString(1));
+            }
+            else return null;
+        }
+
+        public async Task SavePasswordHash(string UserId, string NewHash, string NewSalt)
+        {
+            using var conn = await GetConnection();
+
+            var query = "UPDATE chat.USERS SET PasswordHash=@PasswordHash, PasswordSalt=@PasswordSalt WHERE Id = @UserId";
+
+            var args = new
+            {
+                UserId,
+                PasswordHash = NewHash,
+                PasswordSalt = NewSalt
+            };
+
+            await conn.ExecuteAsync(query, args);
+        }
     }
 }

@@ -14,13 +14,11 @@ namespace ChatServer.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IAuthRepository _authRepository;
         private readonly IFriendService _friendService;
 
-        public UserService(IUserRepository userRepository, IAuthRepository authRepository, IFriendService friendService)
+        public UserService(IUserRepository userRepository, IFriendService friendService)
         {
             _userRepository = userRepository;
-            _authRepository = authRepository;
             _friendService = friendService;
         }
 
@@ -72,7 +70,7 @@ namespace ChatServer.Services
             var newSalt = GenerateSalt();
             var newHash = HashHelper.CalculateHash(Password, newSalt);
 
-            await _authRepository.SavePasswordHash(UserId, newHash, newSalt);
+            await _userRepository.SavePasswordHash(UserId, newHash, newSalt);
         }
 
         public async Task Edit(string Id, UserModel User)
@@ -91,6 +89,11 @@ namespace ChatServer.Services
 
                 await UpdateUserPassword(Id, User.Password);
             }
+        }
+
+        public async Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId)
+        {
+            return await _userRepository.GetPasswordHashAndSalt(UserId);
         }
 
         public async Task<List<string>> CheckUsersUpdate(CheckUserUpdateRequest Request)

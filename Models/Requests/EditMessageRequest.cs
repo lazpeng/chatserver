@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ChatServer.Models.Requests
 {
-    public class EditMessageRequest : BaseAuthenticatedRequest
+    public class EditMessageRequest
     {
         [Required]
         public long MessageId { get; set; }

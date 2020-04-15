@@ -4,6 +4,7 @@ using ChatServer.Controllers.Interfaces;
 using ChatServer.Services.Interfaces;
 using ChatServer.Models.Requests;
 using System.Threading.Tasks;
+using ChatServer.Exceptions;
 
 namespace ChatServer.Controllers
 {
@@ -25,8 +26,10 @@ namespace ChatServer.Controllers
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
         [HttpGet("search/{username}")]
-        public async Task<IActionResult> Search(string username)
+        public async Task<IActionResult> Search(string username, [FromHeader] string Authorization)
         {
+            _authService.Authorize(Authorization);
+
             return Ok(await _userService.Search(username));
         }
 
@@ -35,11 +38,11 @@ namespace ChatServer.Controllers
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
         [HttpPost("{id}")]
-        public async Task<IActionResult> Get(string id, [FromBody] BaseAuthenticatedRequest request)
+        public async Task<IActionResult> Get(string id, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(request);
+            var SourceId = _authService.Authorize(Authorization);
 
-            var user = await _userService.Get(request.SourceId, id);
+            var user = await _userService.Get(SourceId, id);
             if (user != null)
             {
                 return Ok(user);
@@ -48,9 +51,14 @@ namespace ChatServer.Controllers
         }
 
         [HttpPut("{Id}")]
-        public async Task<IActionResult> Edit(string Id, [FromBody] EditUserRequest Request)
+        public async Task<IActionResult> Edit(string Id, [FromBody] EditUserRequest Request, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            var User = _authService.Authorize(Authorization);
+            if(Id != User)
+            {
+                throw new ChatAuthException("Editing another user");
+            }
+
             await _userService.Edit(Id, Request.User);
 
             return Ok(await _userService.Get(Id, Id));
@@ -64,18 +72,23 @@ namespace ChatServer.Controllers
         }
 
         [HttpDelete("{SourceId}")]
-        public async Task<IActionResult> DeleteAccount(string SourceId, [FromBody] string Token)
+        public async Task<IActionResult> DeleteAccount(string SourceId, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
+            var User = _authService.Authorize(Authorization);
+
+            if(User != SourceId)
+            {
+                throw new ChatAuthException("Deleting another user");
+            }
 
             await _userService.DeleteAccount(SourceId);
             return Ok();
         }
 
         [HttpPost("checkUpdate")]
-        public async Task<IActionResult> CheckUsersUpdate([FromBody] CheckUserUpdateRequest Request)
+        public async Task<IActionResult> CheckUsersUpdate([FromBody] CheckUserUpdateRequest Request, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            _authService.Authorize(Authorization);
 
             return Ok(await _userService.CheckUsersUpdate(Request));
         }

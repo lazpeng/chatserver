@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ChatServer.Models.Requests
 {
-    public class CheckNewRequest : BaseAuthenticatedRequest
+    public class CheckNewRequest
     {
         [Required(ErrorMessage = "Last received message is required")]
         public long LastReceivedId { get; set; }

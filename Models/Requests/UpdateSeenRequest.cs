@@ -2,7 +2,7 @@
 
 namespace ChatServer.Models.Requests
 {
-    public class UpdateSeenRequest : BaseAuthenticatedRequest
+    public class UpdateSeenRequest
     {
         [Required(ErrorMessage = "Last seen message id is required")]
         public long LastSeenId { get; set; }

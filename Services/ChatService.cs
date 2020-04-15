@@ -21,31 +21,31 @@ namespace ChatServer.Services
             _friendService = friendService;
         }
 
-        public async Task<MessageModel> SendMessage(SendMessageRequest request)
+        public async Task<MessageModel> SendMessage(SendMessageRequest request, string SourceId)
         {
-            var targetUser = await _userService.Get(request.SourceId, request.TargetId);
+            var targetUser = await _userService.Get(SourceId, request.TargetId);
 
             if(targetUser != null && 
-                (targetUser.OpenChat || await _friendService.AreUsersFriends(request.SourceId, request.TargetId)))
+                (targetUser.OpenChat || await _friendService.AreUsersFriends(SourceId, request.TargetId)))
             {
-                return await _chatRepository.SendMessage(request);
+                return await _chatRepository.SendMessage(request, SourceId);
             }
 
             throw new ChatPermissionException("Cannot send message to user");
         }
 
-        public async Task EditMessage(EditMessageRequest request)
+        public async Task EditMessage(EditMessageRequest request, string SourceId)
         {
-            if (await _chatRepository.GetSentUserId(request.MessageId) != request.SourceId)
+            if (await _chatRepository.GetSentUserId(request.MessageId) != SourceId)
             {
                 throw new ChatPermissionException("Not sent by this user");
             }
             await _chatRepository.EditMessage(request);
         }
 
-        public async Task DeleteMessage(DeleteMessageRequest request)
+        public async Task DeleteMessage(DeleteMessageRequest request, string SourceId)
         {
-            if(await _chatRepository.GetSentUserId(request.MessageId) != request.SourceId)
+            if(await _chatRepository.GetSentUserId(request.MessageId) != SourceId)
             {
                 throw new ChatPermissionException("Not sent by this user");
             }
@@ -56,18 +56,18 @@ namespace ChatServer.Services
             }
         }
 
-        public async Task UpdateSeen(UpdateSeenRequest request)
+        public async Task UpdateSeen(UpdateSeenRequest request, string SourceId)
         {
-            await _chatRepository.UpdateSeenMessage(request);
+            await _chatRepository.UpdateSeenMessage(request, SourceId);
         }
 
-        public async Task<CheckNewResponse> CheckNewMessages(CheckNewRequest request)
+        public async Task<CheckNewResponse> CheckNewMessages(CheckNewRequest request, string SourceId)
         {
             return new CheckNewResponse
             {
-                NewMessages = await _chatRepository.GetSentMessages(request.SourceId, request.LastReceivedId),
-                EditedMessages = await _chatRepository.GetEditedMessages(request.SourceId, request.LastEditedId),
-                DeletedMessages = await _chatRepository.GetDeletedMessages(request.SourceId, request.LastDeletedId)
+                NewMessages = await _chatRepository.GetSentMessages(SourceId, request.LastReceivedId),
+                EditedMessages = await _chatRepository.GetEditedMessages(SourceId, request.LastEditedId),
+                DeletedMessages = await _chatRepository.GetDeletedMessages(SourceId, request.LastDeletedId)
             };
         }
     }

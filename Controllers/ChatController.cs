@@ -19,28 +19,28 @@ namespace ChatServer.Controllers
             _authService = authDomain;
         }
 
-        [HttpPut("send")]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
+        [HttpPost]
+        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(request);
+            var UserId = _authService.Authorize(Authorization);
 
-            return Ok(_chatService.SendMessage(request));
+            return Ok(await _chatService.SendMessage(request, UserId));
         }
 
-        [HttpGet("check")]
-        public async Task<IActionResult> CheckNewMessages([FromBody] CheckNewRequest request)
+        [HttpGet]
+        public async Task<IActionResult> CheckNewMessages([FromBody] CheckNewRequest request, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(request);
+            var userId = _authService.Authorize(Authorization);
 
-            return Ok(_chatService.CheckNewMessages(request));
+            return Ok(await _chatService.CheckNewMessages(request, userId));
         }
 
-        [HttpPost("seen")]
-        public async Task<IActionResult> UpdateSeen([FromBody] UpdateSeenRequest request)
+        [HttpPut("seen")]
+        public async Task<IActionResult> UpdateSeen([FromBody] UpdateSeenRequest request, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(request);
+            var userId = _authService.Authorize(Authorization);
 
-            await _chatService.UpdateSeen(request);
+            await _chatService.UpdateSeen(request, userId);
             return Ok();
         }
     }

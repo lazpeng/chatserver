@@ -1,4 +1,5 @@
 ﻿using ChatServer.Models;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -14,5 +15,7 @@ namespace ChatServer.Repositories.Interfaces
         Task UpdateLastSeen(string UserId);
         Task Edit(UserModel User);
         Task<bool> IsUserUpToDate(string UserId, string LastKnownDataHash);
+        Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId);
+        Task SavePasswordHash(string UserId, string NewHash, string NewSalt);
     }
 }

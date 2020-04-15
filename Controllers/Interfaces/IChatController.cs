@@ -6,8 +6,8 @@ namespace ChatServer.Controllers.Interfaces
 {
     public interface IChatController
     {
-        Task<IActionResult> SendMessage([FromBody] SendMessageRequest Request);
-        Task<IActionResult> CheckNewMessages([FromBody] CheckNewRequest Request);
-        Task<IActionResult> UpdateSeen([FromBody] UpdateSeenRequest Request);
+        Task<IActionResult> SendMessage([FromBody] SendMessageRequest Request, [FromHeader] string Authorization);
+        Task<IActionResult> CheckNewMessages([FromBody] CheckNewRequest Request, [FromHeader] string Authorization);
+        Task<IActionResult> UpdateSeen([FromBody] UpdateSeenRequest Request, [FromHeader] string Authorization);
     }
 }

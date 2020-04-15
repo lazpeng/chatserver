@@ -20,9 +20,9 @@ namespace ChatServer.Controllers
         }
 
         [HttpPut("request/{Id}")]
-        public async Task<IActionResult> AnswerFriendRequest(long Id, [FromBody] AnswerFriendRequest Request)
+        public async Task<IActionResult> AnswerFriendRequest(long Id, [FromBody] AnswerFriendRequest Request, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            _authService.Authorize(Authorization);
 
             await _friendService.AnswerFriendRequest(Id, Request.Accepted);
 
@@ -30,9 +30,9 @@ namespace ChatServer.Controllers
         }
 
         [HttpDelete("request/{Id}")]
-        public async Task<IActionResult> DeleteFriendRequest(long Id, [FromBody] BaseAuthenticatedRequest Request)
+        public async Task<IActionResult> DeleteFriendRequest(long Id, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            _authService.Authorize(Authorization);
 
             await _friendService.DeleteFriendRequest(Id);
 
@@ -40,36 +40,36 @@ namespace ChatServer.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetFriendList([FromQuery] string User, [FromQuery] string Token)
+        public async Task<IActionResult> GetFriendList([FromHeader] string Authorization)
         {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = User, Token = Token });
+            var User = _authService.Authorize(Authorization);
 
             return Ok(await _friendService.GetFriendList(User));
         }
 
         [HttpGet("request")]
-        public async Task<IActionResult> GetFriendRequests([FromQuery] string User, [FromQuery] string Token)
+        public async Task<IActionResult> GetFriendRequests([FromHeader] string Authorization)
         {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = User, Token = Token });
+            var User = _authService.Authorize(Authorization);
 
             return Ok(await _friendService.GetFriendRequests(User));
         }
 
         [HttpDelete("{TargetId}")]
-        public async Task<IActionResult> RemoveFriend(string TargetId, [FromBody] BaseAuthenticatedRequest Request)
+        public async Task<IActionResult> RemoveFriend(string TargetId, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            var SourceId = _authService.Authorize(Authorization);
 
-            await _friendService.RemoveFriend(TargetId, Request.SourceId);
+            await _friendService.RemoveFriend(TargetId, SourceId);
             return Ok();
         }
 
         [HttpPost("request/{TargetUser}")]
-        public async Task<IActionResult> SendFriendRequest(string TargetUser, [FromBody] BaseAuthenticatedRequest Request)
+        public async Task<IActionResult> SendFriendRequest(string TargetUser, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            var SourceId = _authService.Authorize(Authorization);
 
-            var request = await _friendService.SendFriendRequest(Request.SourceId, TargetUser);
+            var request = await _friendService.SendFriendRequest(SourceId, TargetUser);
 
             if(request != null)
             {

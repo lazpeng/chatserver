@@ -7,6 +7,6 @@ namespace ChatServer.Controllers.Interfaces
     public interface ISessionController
     {
         Task<IActionResult> Login([FromBody] LoginRequest Request);
-        Task<IActionResult> Check([FromBody] BaseAuthenticatedRequest Request);
+        IActionResult Check([FromHeader] string Authorization);
     }
 }

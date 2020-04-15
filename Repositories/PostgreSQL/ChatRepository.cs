@@ -13,7 +13,7 @@ namespace ChatServer.Repositories.PostgreSQL
     {
         public ChatRepository(IConnectionStringProvider provider) : base(provider) { }
 
-        public async Task<MessageModel> SendMessage(SendMessageRequest request)
+        public async Task<MessageModel> SendMessage(SendMessageRequest request, string SourceId)
         {
             using var conn = await GetConnection();
 
@@ -21,27 +21,49 @@ namespace ChatServer.Repositories.PostgreSQL
                             VALUES (@SourceId, @TargetId, @DateSent, @Content, @ReplyTo)
                             RETURNING Id, SourceId, Content, DateSent, InReplyTo";
 
-            var results = await conn.QueryAsync<MessageModel>(query, request);
-
-            if (results.Any())
+            var args = new
             {
-                return results.First();
-            }
-            else return null;
+                SourceId,
+                request.TargetId,
+                request.DateSent,
+                request.Content,
+                request.ReplyTo
+            };
+
+            var results = await conn.QueryAsync<MessageModel>(query, args);
+
+            return results.Any() ? results.First() : null;
         }
 
-        public async Task UpdateSeenMessage(UpdateSeenRequest request)
+        public async Task UpdateSeenMessage(UpdateSeenRequest request, string SourceId)
         {
             using var conn = await GetConnection();
 
-            await conn.ExecuteAsync("UPDATE chat.MESSAGES SET DateSeen = CURRENT_TIMESTAMP WHERE Id <= @LastSeenId AND SourceId=@TargetId AND TargetId=@SourceId", request);
+            var query = "UPDATE chat.MESSAGES SET DateSeen = CURRENT_TIMESTAMP WHERE Id <= @LastSeenId AND SourceId=@TargetId AND TargetId=@SourceId";
+
+            var args = new
+            {
+                request.LastSeenId,
+                request.TargetId,
+                SourceId,
+            };
+
+            await conn.ExecuteAsync(query, args);
         }
 
-        public async Task<LastSeenResponse> GetLastSeenMessage(GetLastSeenRequest request)
+        public async Task<LastSeenResponse> GetLastSeenMessage(GetLastSeenRequest request, string SourceId)
         {
             using var conn = await GetConnection();
 
-            var result = await conn.QuerySingleAsync<long>("SELECT COALESCE(Max(Id), -1) as LastSeenId FROM chat.MESSAGES WHERE SourceId=@SourceId AND TargetId=@TargetId AND DateSeen IS NOT NULL", request);
+            var query = "SELECT COALESCE(Max(Id), -1) as LastSeenId FROM chat.MESSAGES WHERE SourceId = @SourceId AND TargetId = @TargetId AND DateSeen IS NOT NULL";
+
+            var args = new
+            {
+                SourceId,
+                request.TargetId
+            };
+
+            var result = await conn.QuerySingleAsync<long>(query, args);
             return new LastSeenResponse { LastSeenId = result };
         }
 

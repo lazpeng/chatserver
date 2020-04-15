@@ -18,9 +18,9 @@ namespace ChatServer.Controllers
         }
 
         [HttpPost("check")]
-        public async Task<IActionResult> Check([FromBody] BaseAuthenticatedRequest Request)
+        public IActionResult Check([FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            _authService.Authorize(Authorization);
             return Ok();
         }
 

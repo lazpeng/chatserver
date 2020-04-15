@@ -1,4 +1,5 @@
-﻿using ChatServer.Models;
+﻿using System;
+using ChatServer.Models;
 using ChatServer.Models.Requests;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,5 +17,6 @@ namespace ChatServer.Services.Interfaces
         Task Edit(string TargetId, UserModel Request);
         Task UpdateUserPassword(string UserId, string Password);
         Task<List<string>> CheckUsersUpdate(CheckUserUpdateRequest Request);
+        Task<Tuple<string, string>> GetPasswordHashAndSalt(string UserId);
     }
 }

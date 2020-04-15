@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace ChatServer.Models.Requests
 {
@@ -9,7 +8,7 @@ namespace ChatServer.Models.Requests
         public string LastDataHash { get; set; }
     }
 
-    public class CheckUserUpdateRequest : BaseAuthenticatedRequest
+    public class CheckUserUpdateRequest
     {
         public List<CheckUserUpdateModel> KnownUsers { get; set; }
     }

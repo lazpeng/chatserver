@@ -1,5 +1,4 @@
 ﻿using ChatServer.Controllers.Interfaces;
-using ChatServer.Models.Requests;
 using ChatServer.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -20,29 +19,29 @@ namespace ChatServer.Controllers
         }
 
         [HttpPost("{Blocked}")]
-        public async Task<IActionResult> Block(string Blocked, [FromBody] BaseAuthenticatedRequest Request)
+        public async Task<IActionResult> Block(string Blocked, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            var SourceId = _authService.Authorize(Authorization);
 
-            await _blockService.Block(Request.SourceId, Blocked);
+            await _blockService.Block(SourceId, Blocked);
 
             return Ok();
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetBlockedList([FromQuery] string SourceId, [FromQuery] string Token)
+        public async Task<IActionResult> GetBlockedList([FromHeader] string Authorization)
         {
-            await _authService.Authorize(new BaseAuthenticatedRequest { SourceId = SourceId, Token = Token });
+            var SourceId = _authService.Authorize(Authorization);
 
             return Ok(await _blockService.GetBlockedList(SourceId));
         }
 
         [HttpDelete("{Blocked}")]
-        public async Task<IActionResult> RemoveBlock(string Blocked, [FromBody] BaseAuthenticatedRequest Request)
+        public async Task<IActionResult> RemoveBlock(string Blocked, [FromHeader] string Authorization)
         {
-            await _authService.Authorize(Request);
+            var SourceId = _authService.Authorize(Authorization);
 
-            await _blockService.RemoveBlock(Request.SourceId, Blocked);
+            await _blockService.RemoveBlock(SourceId, Blocked);
             return Ok();
         }
     }

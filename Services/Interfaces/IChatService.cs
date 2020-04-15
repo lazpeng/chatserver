@@ -7,14 +7,14 @@ namespace ChatServer.Services.Interfaces
 {
     public interface IChatService
     {
-        Task<MessageModel> SendMessage(SendMessageRequest request);
+        Task<MessageModel> SendMessage(SendMessageRequest request, string SourceId);
 
-        Task EditMessage(EditMessageRequest request);
+        Task EditMessage(EditMessageRequest request, string SourceId);
 
-        Task DeleteMessage(DeleteMessageRequest request);
+        Task DeleteMessage(DeleteMessageRequest request, string SourceId);
 
-        Task UpdateSeen(UpdateSeenRequest request);
+        Task UpdateSeen(UpdateSeenRequest request, string SourceId);
 
-        Task<CheckNewResponse> CheckNewMessages(CheckNewRequest request);
+        Task<CheckNewResponse> CheckNewMessages(CheckNewRequest request, string SourceId);
     }
 }
