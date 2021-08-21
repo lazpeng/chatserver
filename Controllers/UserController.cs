@@ -26,10 +26,8 @@ namespace ChatServer.Controllers
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
         [HttpGet("search/{username}")]
-        public async Task<IActionResult> Search(string username, [FromHeader] string Authorization)
+        public async Task<IActionResult> Search(string username)
         {
-            _authService.Authorize(Authorization);
-
             return Ok(await _userService.Search(username));
         }
 
@@ -37,7 +35,7 @@ namespace ChatServer.Controllers
         /// Gets an user based on its id.
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
-        [HttpPost("{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id, [FromHeader] string Authorization)
         {
             var SourceId = _authService.Authorize(Authorization);
