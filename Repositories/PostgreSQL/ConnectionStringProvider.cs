@@ -22,7 +22,9 @@ namespace ChatServer.Repositories.PostgreSQL
                 Database = databaseUri.LocalPath.TrimStart('/'),
                 Pooling = true,
                 MinPoolSize = 1,
-                MaxPoolSize = 20
+                MaxPoolSize = 20,
+                SslMode = SslMode.Require,
+                TrustServerCertificate = true
             };
 
             return builder.ToString();
