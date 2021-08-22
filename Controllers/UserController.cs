@@ -25,8 +25,8 @@ namespace ChatServer.Controllers
         /// Gets an user based on its username.
         ///<returns>UserModel if found, null if not found</returns>
         ///</summary>
-        [HttpGet("search/{username}")]
-        public async Task<IActionResult> Search(string username)
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string username)
         {
             return Ok(await _userService.Search(username));
         }
