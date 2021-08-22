@@ -47,12 +47,6 @@ namespace ChatServer
             services.AddScoped<IFriendService, FriendService>();
             services.AddScoped<IBlockService, BlockService>();
 
-            services.AddSwaggerGen(options =>
-            {
-                options.CustomSchemaIds(x => x.FullName);
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "ChatServer API", Version = "v1" });
-            });
-
             services.AddControllers();
         }
 
@@ -68,15 +62,6 @@ namespace ChatServer
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.UseSwagger();
-
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "ChatServer API");
-            });
 
             app.UseEndpoints(endpoints =>
             {
